@@ -2,8 +2,8 @@ package bird_data_guessing
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
-	"strings"
 )
 
 func (r *wikipediaResponse) IsFlocking() *Property {
@@ -85,15 +85,15 @@ func (r *wikipediaResponse) ClutchSize() *Property {
 		return p
 	}
 	s := p.StringValue
-	s = strings.Replace(s, "one", "1", -1)
-	s = strings.Replace(s, "two", "2", -1)
-	s = strings.Replace(s, "three", "3", -1)
-	s = strings.Replace(s, "four", "4", -1)
-	s = strings.Replace(s, "five", "5", -1)
-	s = strings.Replace(s, "six", "6", -1)
-	s = strings.Replace(s, "seven", "7", -1)
-	s = strings.Replace(s, "eight", "8", -1)
-	s = strings.Replace(s, "nine", "9", -1)
+	s = caseInsReplace(s, "one", "1")
+	s = caseInsReplace(s, "two", "2")
+	s = caseInsReplace(s, "three", "3")
+	s = caseInsReplace(s, "four", "4")
+	s = caseInsReplace(s, "five", "5")
+	s = caseInsReplace(s, "six", "6")
+	s = caseInsReplace(s, "seven", "7")
+	s = caseInsReplace(s, "eight", "8")
+	s = caseInsReplace(s, "nine", "9")
 	twoParts := caseInsensitiveRegex("(\\d+) ?(to|-) ?(\\d+)").FindStringSubmatch(s)
 	if twoParts == nil {
 		p.IntValue = atoiOrFail(s)
@@ -103,6 +103,10 @@ func (r *wikipediaResponse) ClutchSize() *Property {
 		p.IntValue = (high + low) / 2
 	}
 	return p
+}
+
+func caseInsReplace(input string, lookFor string, replaceWith string) string {
+	return regexp.MustCompile("(?i)"+lookFor).ReplaceAllString(input, replaceWith)
 }
 
 func (wr *wikipediaResponse) getClutchMatch(matchRange bool) *Property {

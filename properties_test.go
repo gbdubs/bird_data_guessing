@@ -58,6 +58,7 @@ func TestClutchSize(t *testing.T) {
 		{"list format", "Average Laid Eggs: 12", 12},
 		{"decimal format", "averages 8.02 eggs laid", 8},
 		{"clutches of", "hens yield clutches of 4 without variation", 4},
+		{"mixed terminology", "lay 3 to five eggs", 4},
 		{"not found", "lol no egg count here looser", 0},
 	}
 	for _, tc := range testCases {
