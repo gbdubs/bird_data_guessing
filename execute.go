@@ -1,6 +1,7 @@
 package bird_data_guessing
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -47,6 +48,7 @@ func (i *Input) Execute() (*Output, error) {
 	sourceTimestamp := r.Query.Pages.Page.Cirrusdoc.V.Source.Timestamp
 	o.Attribution.CreatedAt, err = time.Parse(time.RFC3339, sourceTimestamp)
 	if err != nil {
+		fmt.Printf("Error when looking at element: %s", i.LatinName)
 		panic(err)
 	}
 	o.Attribution.License = "Creative Commons Attribution-ShareAlike 3.0 Unported License (CC BY-SA)"
