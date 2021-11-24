@@ -143,6 +143,7 @@ func getWikipediaPage(latinName string) (*wikipediaResponse, error) {
 	if err != nil {
 		return r, err
 	}
+	fmt.Printf("CALLING URL %v\n", req.URL)
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		return r, errors.New(fmt.Sprintf("Request failed: %d %s", resp.StatusCode, resp.Status))
@@ -151,15 +152,18 @@ func getWikipediaPage(latinName string) (*wikipediaResponse, error) {
 	if err != nil {
 		return r, err
 	}
+	err = xml.Unmarshal(asBytes, &r)
+	if err != nil {
+		return r, err
+	}
+	if r.Query.Pages.Page.Idx == "-1" {
+		return r, errors.New(fmt.Sprintf("404: Bird wasn't found: %s", req.URL))
+	}
 	err = os.MkdirAll(filepath.Dir(memoizedFileName), 0777)
 	if err != nil {
 		return r, err
 	}
 	err = ioutil.WriteFile(memoizedFileName, asBytes, 0777)
-	if err != nil {
-		return r, err
-	}
-	err = xml.Unmarshal(asBytes, &r)
 	return r, err
 }
 

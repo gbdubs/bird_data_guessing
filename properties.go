@@ -51,14 +51,14 @@ func (r *wikipediaResponse) FunFact(englishName string) *Property {
 
 func (r *wikipediaResponse) Wingspan() *Property {
 	numberRegex := "\\D(\\d+)(\\.\\d+)?"
-	inchesRegex := numberRegex + " ?in\\.?"
+	inchesRegex := numberRegex + " ?(in|inches)\\.?"
 	cmRegex := numberRegex + " ?(cm|centimeter|centimetre)"
 	np := "[^.\\d]*"
 	avg := fmt.Sprintf("(female%saverage%swing.?span|wing.?span%sfemale%saverage|average%sfemale%swing.?span)", np, np, np, np, np, np)
 	ws := "wing.?span"
 	m := make(map[string]int)
 	m[fmt.Sprintf("%s%s%s", avg, np, cmRegex)] = 2
-	m[fmt.Sprintf("%s%s%s%s%s", avg, np, inchesRegex, np, cmRegex)] = 4
+	m[fmt.Sprintf("%s%s%s%s%s", avg, np, inchesRegex, np, cmRegex)] = 5
 	p := r.ExtractAnyMatch(m)
 	if p.StringValue == "" {
 		m = make(map[string]int)

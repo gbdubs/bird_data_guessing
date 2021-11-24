@@ -46,9 +46,12 @@ func (i *Input) Execute() (*Output, error) {
 	o.Attribution.Author = "Wikimedia Foundation"
 	o.Attribution.AuthorUrl = "https://wikimedia.org"
 	sourceTimestamp := r.Query.Pages.Page.Cirrusdoc.V.Source.Timestamp
+	if sourceTimestamp == "" {
+		sourceTimestamp = r.Query.Pages.Page.Touched
+	}
 	o.Attribution.CreatedAt, err = time.Parse(time.RFC3339, sourceTimestamp)
 	if err != nil {
-		fmt.Printf("Error when looking at element: %s", i.LatinName)
+		fmt.Printf("Error when looking at element: %s\n", i.LatinName)
 		panic(err)
 	}
 	o.Attribution.License = "Creative Commons Attribution-ShareAlike 3.0 Unported License (CC BY-SA)"
