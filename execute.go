@@ -1,5 +1,9 @@
 package bird_data_guessing
 
+import (
+	"time"
+)
+
 func (i *Input) Execute() (*Output, error) {
 	var oo Output
 	o := &oo
@@ -35,6 +39,20 @@ func (i *Input) Execute() (*Output, error) {
 	o.Data.PredatorScore = r.IsPredatory().Strength
 	o.Data.FlockingScore = r.IsFlocking().Strength
 
+	o.Attribution.OriginUrl = r.Query.Pages.Page.Canonicalurl
+	o.Attribution.CollectedAt = time.Now()
+	o.Attribution.OriginalTitle = r.Query.Pages.Page.Title
+	o.Attribution.Author = "Wikimedia Foundation"
+	o.Attribution.AuthorUrl = "https://wikimedia.org"
+	sourceTimestamp := r.Query.Pages.Page.Cirrusdoc.V.Source.Timestamp
+	o.Attribution.CreatedAt, err = time.Parse(time.RFC3339, sourceTimestamp)
+	if err != nil {
+		panic(err)
+	}
+	o.Attribution.License = "Creative Commons Attribution-ShareAlike 3.0 Unported License (CC BY-SA)"
+	o.Attribution.LicenseUrl = "https://en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License"
+	o.Attribution.ScrapingMethodology = "github.com/gbdubs/bird_data_guessing"
+	o.Attribution.Context = []string{"Called Wikipedia's API with action=query, see api.go for details."}
 	//	o.setDebuggingFields(i.EnglishName, r)
 	return o, err
 }

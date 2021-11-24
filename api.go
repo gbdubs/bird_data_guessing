@@ -22,12 +22,23 @@ type wikipediaResponse struct {
 		Pages struct {
 			Text string `xml:",chardata"`
 			Page struct {
-				Text      string `xml:",chardata"`
-				Idx       string `xml:"_idx,attr"`
-				Pageid    string `xml:"pageid,attr"`
-				Ns        string `xml:"ns,attr"`
-				Title     string `xml:"title,attr"`
-				Cirrusdoc struct {
+				Text                 string `xml:",chardata"`
+				Idx                  string `xml:"_idx,attr"`
+				Pageid               string `xml:"pageid,attr"`
+				Ns                   string `xml:"ns,attr"`
+				Title                string `xml:"title,attr"`
+				Contentmodel         string `xml:"contentmodel,attr"`
+				Pagelanguage         string `xml:"pagelanguage,attr"`
+				Pagelanguagehtmlcode string `xml:"pagelanguagehtmlcode,attr"`
+				Pagelanguagedir      string `xml:"pagelanguagedir,attr"`
+				Touched              string `xml:"touched,attr"`
+				Lastrevid            string `xml:"lastrevid,attr"`
+				Length               string `xml:"length,attr"`
+				Redirect             string `xml:"redirect,attr"`
+				Fullurl              string `xml:"fullurl,attr"`
+				Editurl              string `xml:"editurl,attr"`
+				Canonicalurl         string `xml:"canonicalurl,attr"`
+				Cirrusdoc            struct {
 					Text string `xml:",chardata"`
 					V    struct {
 						Text    string `xml:",chardata"`
@@ -111,7 +122,7 @@ type wikipediaResponse struct {
 func getWikipediaPage(latinName string) (*wikipediaResponse, error) {
 	var wr wikipediaResponse
 	r := &wr
-	memoizedFileName := "/tmp/bird_property_guessing/" + latinName + ".xml"
+	memoizedFileName := "/tmp/bird_data_guessing/" + latinName + ".xml"
 	fileBytes, err := ioutil.ReadFile(memoizedFileName)
 	if err == nil {
 		err := xml.Unmarshal(fileBytes, r)
@@ -123,8 +134,9 @@ func getWikipediaPage(latinName string) (*wikipediaResponse, error) {
 	}
 	q := req.URL.Query()
 	q.Add("action", "query")
-	q.Add("prop", "cirrusdoc")
+	q.Add("prop", "cirrusdoc|info")
 	q.Add("format", "xml")
+	q.Add("inprop", "url")
 	q.Add("titles", latinName)
 	req.URL.RawQuery = q.Encode()
 	resp, err := http.DefaultClient.Do(req)
