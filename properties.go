@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 func (r *wikipediaResponse) IsFlocking() *Property {
@@ -72,7 +74,7 @@ func (r *wikipediaResponse) Wingspan() *Property {
 	if p.StringValue == "" {
 		return p
 	}
-	p.IntValue = atoiOrFail(p.StringValue)
+	p.IntValue = debugAtoi(p)
 	return p
 }
 
@@ -131,6 +133,16 @@ func (wr *wikipediaResponse) getClutchMatch(matchRange bool) *Property {
 func atoiOrFail(s string) int {
 	i, e := strconv.Atoi(s)
 	if e != nil {
+		panic(e)
+	}
+	return i
+}
+
+func debugAtoi(p *Property) int {
+	i, e := strconv.Atoi(p.StringValue)
+	if e != nil {
+		spew.Dump(p)
+		spew.Dump(e)
 		panic(e)
 	}
 	return i
