@@ -1,74 +1,141 @@
 package bird_data_guessing
 
 import (
-	"fmt"
-	"time"
+	"log"
+	"math"
+	"strings"
+
+	"github.com/gbdubs/attributions"
 )
 
 func (i *Input) Execute() (*Output, error) {
-	var oo Output
+	oo := Output{}
 	o := &oo
-	r, err := getWikipediaPage(i.LatinName)
-	if err != nil {
-		return o, err
+	dd := DebugDatas{}
+	var datas []Data
+	var attribs []attributions.Attribution
+	englishName := i.EnglishName
+
+	wResp, wErr := getWikipediaResponse(i.LatinName)
+	if wErr == nil {
+		englishName = wResp.englishName()
+		wData, wDebug := wResp.propertySearchers().getData(englishName)
+		dd.Wikipedia = *wDebug
+		datas = append(datas, *wData)
+		attribs = append(attribs, *wResp.attribution())
+	} else if strings.Contains(wErr.Error(), "404") {
+		// Nothing to do.
+	} else {
+		log.Printf("Wikipedia Error %+v", wErr)
 	}
-	o.Data.EnglishName = i.EnglishName
-	o.Data.LatinName = i.LatinName
 
-	f := r.Food()
-	o.Data.WormScore = f.Worm.Strength
-	o.Data.WheatScore = f.Wheat.Strength
-	o.Data.BerryScore = f.Berry.Strength
-	o.Data.FishScore = f.Fish.Strength
-	o.Data.RatScore = f.Rat.Strength
-	o.Data.NectarScore = f.Nectar.Strength
-
-	n := r.NestType()
-	o.Data.CupScore = n.Cup.Strength
-	o.Data.GroundScore = n.Ground.Strength
-	o.Data.PlatformScore = n.Platform.Strength
-	o.Data.SlotScore = n.Slot.Strength
-
-	h := r.Habitat()
-	o.Data.ForestScore = h.Forest.Strength
-	o.Data.GrassScore = h.Grass.Strength
-	o.Data.WaterScore = h.Water.Strength
-
-	o.Data.FunFact = r.FunFact(i.EnglishName).StringValue
-	o.Data.Wingspan = r.Wingspan().IntValue
-	o.Data.ClutchSize = r.ClutchSize().IntValue
-	o.Data.PredatorScore = r.IsPredatory().Strength
-	o.Data.FlockingScore = r.IsFlocking().Strength
-
-	o.Attribution.OriginUrl = r.Query.Pages.Page.Canonicalurl
-	o.Attribution.CollectedAt = time.Now()
-	o.Attribution.OriginalTitle = r.Query.Pages.Page.Title
-	o.Attribution.Author = "Wikimedia Foundation"
-	o.Attribution.AuthorUrl = "https://wikimedia.org"
-	sourceTimestamp := r.Query.Pages.Page.Cirrusdoc.V.Source.Timestamp
-	if sourceTimestamp == "" {
-		sourceTimestamp = r.Query.Pages.Page.Touched
+	aabResp, aabErr := getAllAboutBirdsResponse(englishName)
+	if aabErr == nil {
+		aabData, aabDebug := aabResp.propertySearchers().getData(englishName)
+		dd.AllAboutBirds = *aabDebug
+		datas = append(datas, *aabData)
+		attribs = append(attribs, *aabResp.attribution())
+	} else if strings.Contains(aabErr.Error(), "404") {
+		// Nothing to do.
+	} else {
+		log.Printf("All About Birds Error %+v", aabErr)
 	}
-	o.Attribution.CreatedAt, err = time.Parse(time.RFC3339, sourceTimestamp)
-	if err != nil {
-		fmt.Printf("Error when looking at element: %s\n", i.LatinName)
-		panic(err)
+
+	auResp, auErr := getAudubonResponse(englishName)
+	if auErr == nil {
+		auData, auDebug := auResp.propertySearchers().getData(englishName)
+		dd.Audubon = *auDebug
+		datas = append(datas, *auData)
+		attribs = append(attribs, *auResp.attribution())
+	} else if strings.Contains(auErr.Error(), "404") {
+		// Nothing to do.
+	} else {
+		log.Printf("Audubon Error %+v", auErr)
 	}
-	o.Attribution.License = "Creative Commons Attribution-ShareAlike 3.0 Unported License (CC BY-SA)"
-	o.Attribution.LicenseUrl = "https://en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License"
-	o.Attribution.ScrapingMethodology = "github.com/gbdubs/bird_data_guessing"
-	o.Attribution.Context = []string{"Called Wikipedia's API with action=query, see api.go for details."}
-	//	o.setDebuggingFields(i.EnglishName, r)
-	return o, err
+
+	if len(datas) == 0 {
+		return o, wErr
+	}
+
+	o.Attributions = attribs
+	o.Data = synthesizeDatas(i.LatinName, datas)
+	if i.Debug {
+		o.DebugDatas = dd
+	}
+	return o, nil
 }
 
-/* Debug-only method */
-func (o *Output) setDebuggingFields(en string, r *wikipediaResponse) {
-	o.DebugData.Habitat = *r.Habitat()
-	o.DebugData.IsPredatory = *r.IsPredatory()
-	o.DebugData.IsFlocking = *r.IsFlocking()
-	o.DebugData.NestType = *r.NestType()
-	o.DebugData.FunFact = *r.FunFact(en)
-	o.DebugData.ClutchSize = *r.ClutchSize()
-	o.DebugData.Wingspan = *r.Wingspan()
+type dataStringField func(d Data) string
+type dataIntField func(d Data) int
+
+func synthesizeDatas(latinName string, ds []Data) Data {
+	return Data{
+		LatinName:     latinName,
+		EnglishName:   first(ds, func(d Data) string { return d.EnglishName }),
+		WheatScore:    mult(ds, func(d Data) int { return d.WheatScore }),
+		WormScore:     mult(ds, func(d Data) int { return d.WormScore }),
+		BerryScore:    mult(ds, func(d Data) int { return d.BerryScore }),
+		RatScore:      mult(ds, func(d Data) int { return d.RatScore }),
+		FishScore:     mult(ds, func(d Data) int { return d.FishScore }),
+		NectarScore:   mult(ds, func(d Data) int { return d.NectarScore }),
+		ForestScore:   mult(ds, func(d Data) int { return d.ForestScore }),
+		GrassScore:    mult(ds, func(d Data) int { return d.GrassScore }),
+		WaterScore:    mult(ds, func(d Data) int { return d.WaterScore }),
+		CupScore:      mult(ds, func(d Data) int { return d.CupScore }),
+		GroundScore:   mult(ds, func(d Data) int { return d.GroundScore }),
+		PlatformScore: mult(ds, func(d Data) int { return d.PlatformScore }),
+		SlotScore:     mult(ds, func(d Data) int { return d.SlotScore }),
+		Wingspan:      geomAvg(ds, func(d Data) int { return d.Wingspan }),
+		ClutchSize:    geomAvg(ds, func(d Data) int { return d.ClutchSize }),
+		FlockingScore: mult(ds, func(d Data) int { return d.FlockingScore }),
+		PredatorScore: mult(ds, func(d Data) int { return d.PredatorScore }),
+		FunFact:       last(ds, func(d Data) string { return d.FunFact }),
+	}
+}
+
+func last(ds []Data, f dataStringField) string {
+	for i, _ := range ds {
+		d := ds[len(ds)-1-i]
+		s := f(d)
+		if s != "" {
+			return s
+		}
+	}
+	return ""
+}
+
+func first(ds []Data, f dataStringField) string {
+	for _, d := range ds {
+		s := f(d)
+		if s != "" {
+			return s
+		}
+	}
+	return ""
+}
+
+func geomAvg(ds []Data, f dataIntField) int {
+	r := 1
+	count := 0
+	for _, d := range ds {
+		v := f(d)
+		if v == 0 {
+			continue
+		}
+		r *= v + 1
+		count++
+	}
+	if count < 2 {
+		return r - 1
+	}
+	root := math.Pow(float64(r), 1.0/float64(count))
+	return int(math.Round(root) - 1)
+}
+
+func mult(ds []Data, f dataIntField) int {
+	r := 1
+	for _, d := range ds {
+		r *= f(d) + 1
+	}
+	return r - 1
 }

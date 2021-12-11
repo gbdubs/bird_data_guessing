@@ -9,7 +9,7 @@ import (
 
 func main() {
 	input := bird_data_guessing.Input{
-		LatinName:   "Nesophlox evelynae",
+		LatinName:   "Branta hutchinsii",
 		EnglishName: "Western tanager",
 	}
 	output, err := input.Execute()

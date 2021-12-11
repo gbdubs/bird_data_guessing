@@ -4,13 +4,14 @@ import "github.com/gbdubs/attributions"
 
 type Input struct {
 	LatinName   string
-	EnglishName string
+	EnglishName string // Optional.
+	Debug       bool
 }
 
 type Output struct {
-	Data        Data
-	DebugData   DebugData
-	Attribution attributions.Attribution
+	Data         Data
+	DebugDatas   DebugDatas
+	Attributions []attributions.Attribution
 }
 
 type Data struct {
@@ -42,7 +43,14 @@ type Data struct {
 
 // Debugging Types below this line
 
+type DebugDatas struct {
+	Wikipedia     DebugData
+	AllAboutBirds DebugData
+	Audubon       DebugData
+}
+
 type DebugData struct {
+	Data        Data
 	Food        Food
 	NestType    NestType
 	ClutchSize  Property
@@ -80,11 +88,4 @@ type Property struct {
 	Context     string
 	StringValue string
 	IntValue    int
-}
-
-func (p *Property) Add(o *Property) {
-	p.IntValue += o.IntValue
-	p.StringValue += o.StringValue
-	p.Strength += o.Strength
-	p.Context += o.Context
 }
