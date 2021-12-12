@@ -33,12 +33,14 @@ type Data struct {
 	GroundScore   int
 	PlatformScore int
 	SlotScore     int
-	// Misc Properties
-	Wingspan      int
-	ClutchSize    int
+	// Behavior
 	FlockingScore int
 	PredatorScore int
-	FunFact       string
+	// Precice Properties
+	Wingspan   int
+	ClutchSize int
+	EggColor   string
+	FunFact    string
 }
 
 // Debugging Types below this line
@@ -47,6 +49,7 @@ type DebugDatas struct {
 	Wikipedia     DebugData
 	AllAboutBirds DebugData
 	Audubon       DebugData
+	WhatBird      DebugData
 }
 
 type DebugData struct {
@@ -59,6 +62,7 @@ type DebugData struct {
 	IsFlocking  Property
 	IsPredatory Property
 	FunFact     Property
+	EggColor    Property
 }
 
 type Habitat struct {

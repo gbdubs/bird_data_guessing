@@ -110,26 +110,13 @@ func (r *allAboutBirdsResponse) propertySearchers() *propertySearchers {
 	behaviorText := lifeHistoryPage.Find("[aria-labelledby=behavior]").First().Text()
 	coolFactsText := overviewPage.Find("ul:contains('Cool Facts')").Text()
 	return &propertySearchers{
-		food: &searcher{
-			text: foodText,
-		},
-		nestType: &searcher{
-			text: nestingText,
-		},
-		habitat: &searcher{
-			text: habitatText,
-		},
-		funFact: &searcher{
-			text: coolFactsText + behaviorText,
-		},
-		wingspan: &searcher{
-			text: idText,
-		},
-		clutchSize: &searcher{
-			text: nestingText + behaviorText,
-		},
-		all: &searcher{
-			text: habitatText + foodText + nestingText + behaviorText + coolFactsText + idText,
-		},
+		food:       searchIn(foodText),
+		nestType:   searchIn(nestingText),
+		habitat:    searchIn(habitatText),
+		funFact:    searchIn(coolFactsText + behaviorText),
+		wingspan:   searchIn(idText),
+		clutchSize: searchIn(nestingText + behaviorText),
+		eggColor:   searchIn(nestingText),
+		all:        searchIn(habitatText + foodText + nestingText + behaviorText + coolFactsText + idText),
 	}
 }

@@ -53,6 +53,18 @@ func (i *Input) Execute() (*Output, error) {
 		log.Printf("Audubon Error %+v", auErr)
 	}
 
+	wbResp, wbErr := getWhatBirdResponse(englishName)
+	if wbErr == nil {
+		wbData, wbDebug := wbResp.propertySearchers().getData(englishName)
+		dd.WhatBird = *wbDebug
+		datas = append(datas, *wbData)
+		attribs = append(attribs, *wbResp.attribution())
+	} else if strings.Contains(wbErr.Error(), "404") {
+		// Nothing to do.
+	} else {
+		log.Printf("WhatBird Error %+v", auErr)
+	}
+
 	if len(datas) == 0 {
 		return o, wErr
 	}

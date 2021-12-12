@@ -33,7 +33,7 @@ func getAudubonResponse(englishName string) (*audubonResponse, error) {
 		return r, err
 	}
 
-	nameParam := strings.Replace(englishName, " ", "-", -1)
+	nameParam := strings.ReplaceAll(strings.ReplaceAll(englishName, " ", "-"), "'", "")
 	url := "https://audubon.org/field-guide/bird/" + nameParam
 
 	r.URL = url
@@ -79,29 +79,17 @@ func (r *audubonResponse) propertySearchers() *propertySearchers {
 
 	dietText := page.Find("h2:contains('Diet')").First().Next().Text()
 	feedingText := page.Find("h2:contains('Feeding')").First().Next().Text()
-	eggsText := page.Find("h2:contains('Eggs')").First().Next().Text()
+	eggsText := "EggsAudubonEggs " + page.Find("h2:contains('Eggs')").First().Next().Text()
 	nestingText := page.Find("h2:contains('Nesting')").First().Next().Text()
 	habitatText := page.Find("th:contains('Habitat')").First().Parent().Find("td").First().Text()
 	allText := page.Find("body").Text()
 
-	emptySearcher := &searcher{}
 	return &propertySearchers{
-		food: &searcher{
-			text: dietText + feedingText,
-		},
-		nestType: &searcher{
-			text: nestingText,
-		},
-		habitat: &searcher{
-			text: habitatText + nestingText,
-		},
-		clutchSize: &searcher{
-			text: eggsText + nestingText,
-		},
-		all: &searcher{
-			text: allText,
-		},
-		funFact:  emptySearcher,
-		wingspan: emptySearcher,
+		food:       searchIn(dietText + feedingText),
+		nestType:   searchIn(nestingText),
+		habitat:    searchIn(habitatText + nestingText),
+		clutchSize: searchIn(eggsText + nestingText),
+		eggColor:   searchIn(eggsText),
+		all:        searchIn(allText),
 	}
 }

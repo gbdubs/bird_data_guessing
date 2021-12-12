@@ -1,19 +1,19 @@
 package bird_data_guessing
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 )
 
 type propertySearchers struct {
-	food       *searcher
-	nestType   *searcher
-	habitat    *searcher
-	funFact    *searcher
-	wingspan   *searcher
-	clutchSize *searcher
-	all        *searcher
+	eggColor   searcher
+	food       searcher
+	nestType   searcher
+	habitat    searcher
+	funFact    searcher
+	wingspan   searcher
+	clutchSize searcher
+	all        searcher
 }
 
 func (s *propertySearchers) getData(englishName string) (*Data, *DebugData) {
@@ -47,6 +47,10 @@ func (s *propertySearchers) getData(englishName string) (*Data, *DebugData) {
 	ff := s.funFact.FunFact(englishName)
 	d.FunFact = ff.StringValue
 	dd.FunFact = *ff
+
+	ec := s.eggColor.EggColor()
+	d.EggColor = ec.StringValue
+	dd.EggColor = *ec
 
 	w := s.wingspan.Wingspan()
 	d.Wingspan = w.IntValue
@@ -110,97 +114,8 @@ func (r *searcher) FunFact(englishName string) *Property {
 		"(\\.|\\n)\\s*(((all|some|most|the|a|an) )?"+englishName+"[a-zA-Z0-9\\-,'\"’‘”“ ]{40,150}\\.)", 2)
 }
 
-func (r *searcher) Wingspan() *Property {
-	e := ".{0,50}"
-	avgFemale := fmt.Sprintf("(female%saverage%swing.?span|wing.?span%sfemale%saverage|average%sfemale%swing.?span)", e, e, e, e, e, e)
-	avg := fmt.Sprintf("(average%swing.?span|wing.?span%saverage)", e, e)
-	args := []string{avgFemale, avg, "(wing.?span)", "(wing)", "(length|long|measure)"}
-	units := []string{"cm|centimeter|centimetre", "millimeter|millimetre|mm", "meter|m", "inches|in"}
-	for _, order := range []bool{true, false} {
-		for _, arg := range args {
-			for i, unit := range units {
-				p := "[^.\\d](\\d+)(\\.\\d+)? ?(" + unit + ")"
-				m := make(map[string]int)
-				if order {
-					m[fmt.Sprintf("%s%s%s", arg, e, p)] = 2
-				} else {
-					m[fmt.Sprintf("%s%s%s", p, e, arg)] = 1
-				}
-				a := r.ExtractAnyMatch(m)
-				if a.StringValue != "" {
-					switch i {
-					case 0:
-						a.IntValue = atoiOrFail(a.StringValue)
-						break
-					case 1:
-						a.IntValue = atoiOrFail(a.StringValue) / 10
-						break
-					case 2:
-						a.IntValue = atoiOrFail(a.StringValue) * 100
-						break
-					case 3:
-						a.IntValue = int(float32(atoiOrFail(a.StringValue)) * 2.54)
-					}
-					if a.IntValue >= 5 /* Bee Hummingbird */ && a.IntValue <= 375 /* Wandering albatross */ {
-						return a
-					}
-				}
-			}
-		}
-	}
-	return &Property{}
-}
-
-func (r *searcher) ClutchSize() *Property {
-	p := r.getClutchMatch(true)
-	if p.StringValue == "" {
-		p = r.getClutchMatch(false)
-	}
-	if p.StringValue == "" {
-		return p
-	}
-	s := p.StringValue
-	s = caseInsReplace(s, "one", "1")
-	s = caseInsReplace(s, "two", "2")
-	s = caseInsReplace(s, "three", "3")
-	s = caseInsReplace(s, "four", "4")
-	s = caseInsReplace(s, "five", "5")
-	s = caseInsReplace(s, "six", "6")
-	s = caseInsReplace(s, "seven", "7")
-	s = caseInsReplace(s, "eight", "8")
-	s = caseInsReplace(s, "nine", "9")
-	twoParts := caseInsensitiveRegex("(\\d+) ?(to|-|–) ?(\\d+)").FindStringSubmatch(s)
-	if twoParts == nil {
-		p.IntValue = atoiOrFail(s)
-	} else {
-		low := atoiOrFail(twoParts[1])
-		high := atoiOrFail(twoParts[3])
-		p.IntValue = (high + low) / 2
-	}
-	return p
-}
-
 func caseInsReplace(input string, lookFor string, replaceWith string) string {
 	return regexp.MustCompile("(?i)"+lookFor).ReplaceAllString(input, replaceWith)
-}
-
-func (wr *searcher) getClutchMatch(matchRange bool) *Property {
-	nr := "(one|two|three|four|five|six|seven|eight|nine|\\d+)(\\.\\d+)?"
-	rr := fmt.Sprintf("(%s to %s|%s ?- ?%s|%s ?– ?%s)", nr, nr, nr, nr, nr, nr)
-	np := "[^.\\d]*"
-	r := nr
-	if matchRange {
-		r = rr
-	}
-	m := make(map[string]int)
-	m[fmt.Sprintf("la(id|y)%s%s%segg", np, r, np)] = 2
-	m[fmt.Sprintf("egg%sla(id|y)%s%s", np, np, r)] = 2
-	m[fmt.Sprintf("clutch size%s%s", np, r)] = 1
-	m[fmt.Sprintf("%s%seggs per year", r, np)] = 1
-	m[fmt.Sprintf("clutch%s%s", np, r)] = 1
-	m[fmt.Sprintf("%s%segg%sla(y|id)", r, np, np)] = 1
-	m[fmt.Sprintf("la(id|y)%segg%s%s", np, np, r)] = 2
-	return wr.ExtractAnyMatch(m)
 }
 
 func atoiOrFail(s string) int {
@@ -209,4 +124,12 @@ func atoiOrFail(s string) int {
 		panic(e)
 	}
 	return i
+}
+
+func floatOrFail(s string) float64 {
+	f, e := strconv.ParseFloat(s, 64)
+	if e != nil {
+		panic(e)
+	}
+	return f
 }

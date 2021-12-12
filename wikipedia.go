@@ -207,14 +207,13 @@ func (r *wikipediaResponse) englishName() string {
 }
 
 func (r *wikipediaResponse) propertySearchers() *propertySearchers {
-	searcher := &searcher{
-		text: r.getText(),
-	}
+	searcher := searchIn(r.getText())
 	return &propertySearchers{
 		food:       searcher,
 		nestType:   searcher,
 		habitat:    searcher,
 		funFact:    searcher,
+		eggColor:   searcher,
 		wingspan:   searcher,
 		clutchSize: searcher,
 		all:        searcher,

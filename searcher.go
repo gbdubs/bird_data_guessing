@@ -4,11 +4,23 @@ import (
 	"fmt"
 	"math/rand"
 	"regexp"
+	"strings"
 	"sync"
 )
 
 type searcher struct {
 	text string
+}
+
+func searchIn(s string) searcher {
+	// Strips out Unicode Spaces
+	s = strings.Join(strings.Fields(s), " ")
+	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.ReplaceAll(s, "\t", " ")
+	s = strings.ReplaceAll(s, "\\s+", " ")
+	return searcher{
+		text: s,
+	}
 }
 
 func (s *searcher) CountMatches(searchFor []string) *Property {
