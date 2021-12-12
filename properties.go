@@ -74,38 +74,38 @@ func (s *propertySearchers) getData(englishName string) (*Data, *DebugData) {
 }
 
 func (s *searcher) IsFlocking() *Property {
-	return s.CountMatches([]string{"flock", "large flocks", "social", "large colonies", "large colony", "gregarious", "nests per colony", "roosts", "communal roost", "hundreds.{0,10}of birds"})
+	return s.CountMatches("flock", "large flocks", "social", "large colonies", "large colony", "gregarious", "nests per colony", "roosts", "communal roost", "hundreds.{0,10}of birds")
 }
 
 func (s *searcher) IsPredatory() *Property {
-	return s.CountMatches([]string{" hawk ", "vulture", " falcon ", " eagle ", " prey ", "predator", "carrion", "small animals", "have killed", "condor", "hunter", "hunting", "scavenge", "stalk", "skewer", "impale", "striking", "talon", "hunt", "prey", "hunts", " dive "})
+	return s.CountMatches(" hawk ", "vulture", " falcon ", " eagle ", " prey ", "predator", "carrion", "small animals", "have killed", "condor", "hunter", "hunting", "scavenge", "stalk", "skewer", "impale", "striking", "talon", "hunt", "prey", "hunts", " dive ")
 }
 
 func (s *searcher) Food() *Food {
 	var f Food
-	f.Worm = *s.CountMatches([]string{"invertibrates", "invertebrates", "gnat", "aphid", "fruit flies", "spider", "mosquitoes", "gleaning", "hawking", "insect", "worm", " ant ", " wasp ", "beetle", " bug "})
-	f.Berry = *s.CountMatches([]string{"fruit", "berries", "berry", "cherry", "nectar", "flower", " ripe "})
-	f.Wheat = *s.CountMatches([]string{"grain", "wheat", "seed", " plant ", "vegetation", "shrub", " bush ", " nut ", " nuts "})
-	f.Fish = *s.CountMatches([]string{"fish", "frog", "spawn", "shrimp", "molluscs", "eels", "fish", "fish", "probing", "crustacean", "snail"})
-	f.Rat = *s.CountMatches([]string{"mammal", "rodent", "lizard", "mice", "vole", "squirrel"})
-	f.Nectar = *s.CountMatches([]string{"nectar", "flower", "pollen", "sugar", "nectar", "corollae"})
+	f.Worm = *s.CountMatches("invertibrates", "invertebrates", "gnat", "aphid", "fruit flies", "spider", "mosquitoes", "gleaning", "hawking", "insect", "worm", " ant ", " wasp ", "beetle", " bug ")
+	f.Berry = *s.CountMatches("fruit", "berries", "berry", "cherry", "nectar", "flower", " ripe ")
+	f.Wheat = *s.CountMatches("grain", "wheat", "seed", " plant ", "vegetation", "shrub", " bush ", " nut ", " nuts ")
+	f.Fish = *s.CountMatches("fish", "frog", "spawn", "shrimp", "molluscs", "eels", "fish", "fish", "probing", "crustacean", "snail")
+	f.Rat = *s.CountMatches("mammal", "rodent", "lizard", "mice", "vole", "squirrel")
+	f.Nectar = *s.CountMatches("nectar", "flower", "pollen", "sugar", "nectar", "corollae")
 	return &f
 }
 
 func (s *searcher) Habitat() *Habitat {
 	var h Habitat
-	h.Forest = *s.CountMatches([]string{"tree.?cover", "forest", "in forest", "in trees"})
-	h.Grass = *s.CountMatches([]string{"grassland", "grass", "in grass", "prairie", "meadow"})
-	h.Water = *s.CountMatches([]string{"in water", "near water", "marsh", "water.?bird", "water.?fowl", "bog"})
+	h.Forest = *s.CountMatches("tree.?cover", "forest", "in forest", "in trees", "woodland", "understory", "canopy", "conifer", "evergreen", "groves")
+	h.Grass = *s.CountMatches("grassland", "grass", "in grass", "prairie", "meadow", "scrub", "arid", "farmland")
+	h.Water = *s.CountMatches("in water", "near water", "marsh", "water.?bird", "water.?fowl", "bog", "lake", "floodplain", "riparian", "brackish")
 	return &h
 }
 
 func (r *searcher) NestType() *NestType {
 	var n NestType
-	n.Ground = *r.CountMatches([]string{"ground nest", "ground-dwelling", "scrape", "base of a", "shrub", "sagebrush", "grass", " lek ", " leks ", "shrub cover", "nesting cover", "ground"})
-	n.Cup = *r.CountMatches([]string{"cup nest", "bowl", "deep bowl"})
-	n.Slot = *r.CountMatches([]string{"cavity", "cavities", "tree-nesting", "boxes", "box", "hollow tree", "cave", "nest hole", "nesting hole", "dead tree", "cavity nest"})
-	n.Platform = *r.CountMatches([]string{"platform", "build.{1,10}nest", "platform nest", "sticks", "large platform", "stick nest"})
+	n.Ground = *r.CountMatches("ground nest", "ground-dwelling", "on ground", "on ground", "scrape", "base of a", "shrub", "sagebrush", "grass", " lek ", " leks ", "shrub cover", "nesting cover")
+	n.Cup = *r.CountMatches("cup nest", "bowl", "above ground", "feet above ground", "deep bowl")
+	n.Slot = *r.CountMatches("cavity", "cavities", "tree-nesting", "tree cavity", "woodpecker cavit", "boxes", "box", "hollow tree", "cave", "nest hole", "nesting hole", "dead tree", "cavity nest")
+	n.Platform = *r.CountMatches("platform", "build.{1,10}nest", "platform nest", "sticks", "large platform", "stick nest")
 	return &n
 }
 

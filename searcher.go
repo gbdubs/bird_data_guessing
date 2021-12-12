@@ -23,7 +23,7 @@ func searchIn(s string) searcher {
 	}
 }
 
-func (s *searcher) CountMatches(searchFor []string) *Property {
+func (s *searcher) CountMatches(searchFor ...string) *Property {
 	if s.isDefault() {
 		return &Property{}
 	}

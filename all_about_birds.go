@@ -114,7 +114,6 @@ func (r *allAboutBirdsResponse) propertySearchers() *propertySearchers {
 		nestType:   searchIn(nestingText),
 		habitat:    searchIn(habitatText),
 		funFact:    searchIn(coolFactsText + behaviorText),
-		wingspan:   searchIn(idText),
 		clutchSize: searchIn(nestingText + behaviorText),
 		eggColor:   searchIn(nestingText),
 		all:        searchIn(habitatText + foodText + nestingText + behaviorText + coolFactsText + idText),

@@ -1,6 +1,7 @@
 package bird_data_guessing
 
 import (
+	"fmt"
 	"log"
 	"math"
 	"strings"
@@ -129,19 +130,23 @@ func first(ds []Data, f dataStringField) string {
 func geomAvg(ds []Data, f dataIntField) int {
 	r := 1
 	count := 0
+	var vs []int
 	for _, d := range ds {
 		v := f(d)
 		if v == 0 {
 			continue
 		}
 		r *= v + 1
+		vs = append(vs, v)
 		count++
 	}
 	if count < 2 {
 		return r - 1
 	}
 	root := math.Pow(float64(r), 1.0/float64(count))
-	return int(math.Round(root) - 1)
+	result := int(math.Round(root) - 1)
+	fmt.Printf("%v ==> %d\n", vs, result)
+	return result
 }
 
 func mult(ds []Data, f dataIntField) int {
