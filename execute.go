@@ -1,7 +1,6 @@
 package bird_data_guessing
 
 import (
-	"fmt"
 	"log"
 	"math"
 	"strings"
@@ -103,6 +102,7 @@ func synthesizeDatas(latinName string, ds []Data) Data {
 		FlockingScore: mult(ds, func(d Data) int { return d.FlockingScore }),
 		PredatorScore: mult(ds, func(d Data) int { return d.PredatorScore }),
 		FunFact:       last(ds, func(d Data) string { return d.FunFact }),
+		EggColor:      last(ds, func(d Data) string { return d.EggColor }),
 	}
 }
 
@@ -130,14 +130,12 @@ func first(ds []Data, f dataStringField) string {
 func geomAvg(ds []Data, f dataIntField) int {
 	r := 1
 	count := 0
-	var vs []int
 	for _, d := range ds {
 		v := f(d)
 		if v == 0 {
 			continue
 		}
 		r *= v + 1
-		vs = append(vs, v)
 		count++
 	}
 	if count < 2 {
@@ -145,7 +143,6 @@ func geomAvg(ds []Data, f dataIntField) int {
 	}
 	root := math.Pow(float64(r), 1.0/float64(count))
 	result := int(math.Round(root) - 1)
-	fmt.Printf("%v ==> %d\n", vs, result)
 	return result
 }
 

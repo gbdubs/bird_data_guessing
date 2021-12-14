@@ -36,8 +36,11 @@ func TestWingspan_Wikipedia(t *testing.T) {
 		intCase("Passer domesticus", 22),
 		intCase("Pooecetes gramineus", 24),
 		intCase("Loxia leucoptera", 28),
+		intCase("Columba livia", 66),
+		intCase("Riparia riparia", 28),
 		intCase("Spinus pinus", 20),
-		intCase("Junco hyemalis", 22))
+		intCase("Junco hyemalis", 22),
+		intCase("Accipiter striatus", 50))
 }
 
 // Audubon and AllAboutBirds don't provide reliable Wingspan information.
