@@ -6,23 +6,29 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/gbdubs/attributions"
+	"github.com/gbdubs/inference"
 )
 
 type searcher struct {
-	text string
+	text        string
+	attribution *attributions.Attribution
 }
 
-func searchIn(s string) searcher {
+func attributedSearch(a *attributions.Attribution, s string) searcher {
 	// Strips out Unicode Spaces
 	s = strings.Join(strings.Fields(s), " ")
 	s = strings.ReplaceAll(s, "\n", " ")
 	s = strings.ReplaceAll(s, "\t", " ")
 	s = strings.ReplaceAll(s, "\\s+", " ")
 	return searcher{
-		text: s,
+		text:        s,
+		attribution: a,
 	}
 }
 
+// Delete this
 func (s *searcher) CountMatches(searchFor ...string) *Property {
 	if s.isDefault() {
 		return &Property{}
@@ -37,6 +43,51 @@ func (s *searcher) CountMatches(searchFor ...string) *Property {
 	return p
 }
 
+const defaultContextWidth = 30
+
+func (s *searcher) ZZZCountMatches(searchFor ...string) *inference.Int {
+	components := make([]*inference.Int, 0)
+	for key, matches := range s.ZZZGetMatches(searchFor...) {
+		count := len(matches)
+		source := inference.CombineSources(
+			fmt.Sprintf("count of %s", key),
+			count,
+			inference.AsSourceables(matches)...)
+		components = append(components, &inference.Int{
+			Value:  count,
+			Source: source,
+		})
+	}
+	return inference.SumInt(components...)
+}
+
+func (s *searcher) ZZZGetMatches(searchFor ...string) map[string][]*inference.String {
+	m := make(map[string][]*inference.String)
+	for _, r := range searchFor {
+		regex := caseInsensitiveRegex(r)
+		matchIndices := regex.FindAllStringIndex(s.text, -1)
+		m[r] = make([]*inference.String, len(matchIndices))
+		for i, matchIndices := range matchIndices {
+			match := s.text[matchIndices[0]:matchIndices[1]]
+			start := matchIndices[0] - defaultContextWidth/2
+			end := matchIndices[1] + defaultContextWidth/2
+			m[r][i] = inference.NewString(match, s.boundedSubstring(start, end), s.attribution)
+		}
+	}
+	return m
+}
+
+func (s *searcher) boundedSubstring(start int, end int) string {
+	if start < 0 {
+		start = 0
+	}
+	if end > len(s.text) {
+		end = len(s.text)
+	}
+	return s.text[start:end]
+}
+
+// Delete this
 func (s *searcher) ExtractMatch(pattern string, captureGroup int) *Property {
 	if s.isDefault() {
 		return &Property{}
@@ -54,6 +105,38 @@ func (s *searcher) ExtractMatch(pattern string, captureGroup int) *Property {
 	}
 }
 
+func (s *searcher) ZZZExtractAllMatch(pattern string, captureGroup int) []*inference.String {
+	matches := caseInsensitiveRegex(pattern).FindAllStringSubmatchIndex(s.text, -1)
+	if len(matches) == 0 {
+		return []*inference.String{}
+	}
+	result := make([]*inference.String, len(matches))
+	for i, indexes := range matches {
+		captureMatch := s.text[indexes[2*captureGroup]:indexes[2*captureGroup+1]]
+		context := s.boundedSubstring(indexes[0]-defaultContextWidth/2, indexes[1]+defaultContextWidth/2)
+		result[i] = inference.NewString(
+			captureMatch,
+			context,
+			s.attribution)
+	}
+	return result
+}
+
+func (s *searcher) ZZZExtractMatch(pattern string, captureGroup int) *inference.String {
+	matches := caseInsensitiveRegex(pattern).FindAllStringSubmatchIndex(s.text, -1)
+	if len(matches) == 0 {
+		return &inference.String{}
+	}
+	indexes := matches[rand.Intn(len(matches))]
+	captureMatch := s.text[indexes[2*captureGroup]:indexes[2*captureGroup+1]]
+	context := s.boundedSubstring(indexes[0]-defaultContextWidth/2, indexes[1]+defaultContextWidth/2)
+	return inference.NewString(
+		captureMatch,
+		context,
+		s.attribution)
+}
+
+// Delete this
 func (s *searcher) ExtractAnyMatch(patternToCaptureGroup map[string]int) *Property {
 	if s.isDefault() {
 		return &Property{}
@@ -67,6 +150,26 @@ func (s *searcher) ExtractAnyMatch(patternToCaptureGroup map[string]int) *Proper
 	return &Property{}
 }
 
+func (s *searcher) ZZZExtractAnyMatch(patternToCaptureGroup map[string]int) *inference.String {
+	for p, cg := range patternToCaptureGroup {
+		m := s.ZZZExtractMatch(p, cg)
+		if *m != (inference.String{}) {
+			return m
+		}
+	}
+	return &inference.String{}
+}
+
+func (s *searcher) ZZZExtractAllMatches(patternToCaptureGroup map[string]int) []*inference.String {
+	result := make([]*inference.String, 0)
+	for p, cg := range patternToCaptureGroup {
+		result = append(result, s.ZZZExtractAllMatch(p, cg)...)
+	}
+	return result
+}
+
+// Delete this
+/*
 func (s searcher) CountProximatePairs(searchForA string, searchForB string, allowedDistance int) (int, string) {
 	if s.isDefault() {
 		return 0, ""
@@ -112,7 +215,7 @@ func (s searcher) CountProximatePairs(searchForA string, searchForB string, allo
 	}
 	return hits, fmt.Sprintf("proximate-pairs:%s:%s=%d", searchForA, searchForB, hits)
 }
-
+*/
 func (s *searcher) isDefault() bool {
 	return s.text == ""
 }

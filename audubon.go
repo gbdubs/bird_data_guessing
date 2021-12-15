@@ -1,81 +1,53 @@
 package bird_data_guessing
 
 import (
-	"encoding/xml"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strings"
-	"time"
 
+	"github.com/gbdubs/amass"
 	"github.com/gbdubs/attributions"
 )
 
 type audubonResponse struct {
-	URL         string
-	HTML        string
-	CollectedAt time.Time
+	Response amass.GetResponse
 }
 
-func getAudubonResponse(englishName string) (*audubonResponse, error) {
-	ar := audubonResponse{}
-	r := &ar
+const (
+	audubonSite                  = "audubon"
+	maxAudubonConcurrentRequests = 2
+)
 
-	missingKey := "audubon/" + englishName
-	if isKnownMissing(missingKey) {
-		return r, missingError(missingKey)
-	}
-
-	memoizedFileName := "/tmp/bird_data_guessing/audubon/" + englishName + ".xml"
-	fileBytes, err := ioutil.ReadFile(memoizedFileName)
-	if err == nil {
-		err := xml.Unmarshal(fileBytes, r)
-		return r, err
-	}
-
+func createAudubonRequest(englishName string) *amass.GetRequest {
 	nameParam := strings.ReplaceAll(strings.ReplaceAll(englishName, " ", "-"), "'", "")
-	url := "https://audubon.org/field-guide/bird/" + nameParam
-
-	r.URL = url
-	page, err := getDocumentFromUrl(r.URL, missingKey)
-	if err != nil {
-		return r, err
+	return &amass.GetRequest{
+		Site:                      audubonSite,
+		RequestKey:                nameParam,
+		URL:                       "https://audubon.org/field-guide/bird/" + nameParam,
+		SiteMaxConcurrentRequests: maxAudubonConcurrentRequests,
+		Attribution: attributions.Attribution{
+			Author:              "National Audubon Society, Inc.",
+			AuthorUrl:           "https://audubon.org",
+			License:             "All rights reserved",
+			LicenseUrl:          "https://www.audubon.org/terms-use",
+			ScrapingMethodology: "github.com/gbdubs/bird_data_guessing/audubon",
+		},
 	}
-	r.HTML, err = page.Html()
-	if err != nil {
-		return r, err
-	}
-	r.CollectedAt = time.Now()
-
-	asBytes, err := xml.MarshalIndent(r, "", "  ")
-	if err != nil {
-		return r, err
-	}
-	err = os.MkdirAll(filepath.Dir(memoizedFileName), 0777)
-	if err != nil {
-		return r, err
-	}
-	err = ioutil.WriteFile(memoizedFileName, asBytes, 0777)
-	return r, err
 }
 
-func (r *audubonResponse) attribution() *attributions.Attribution {
-	page := getDocumentFromString(r.HTML)
-	return &attributions.Attribution{
-		OriginUrl:           r.URL,
-		CollectedAt:         r.CollectedAt,
-		OriginalTitle:       page.Find("title").First().Text(),
-		Author:              "National Audubon Society, Inc.",
-		AuthorUrl:           "https://audubon.org",
-		License:             "All rights reserved",
-		LicenseUrl:          "https://www.audubon.org/terms-use",
-		ScrapingMethodology: "github.com/gbdubs/bird_data_guessing",
-		Context:             []string{"HTTP requested the bird information via URL guessing."},
+func reconstructAudubonResponses(responses []*amass.GetResponse) []*audubonResponse {
+	result := make([]*audubonResponse, 0)
+	for _, response := range responses {
+		if response.Site != allAboutBirdsSite {
+			continue
+		}
+		result = append(result, &audubonResponse{
+			Response: *response,
+		})
 	}
+	return result
 }
 
 func (r *audubonResponse) propertySearchers() *propertySearchers {
-	page := getDocumentFromString(r.HTML)
+	page := r.Response.AsDocument()
 
 	dietText := page.Find("h2:contains('Diet')").First().Next().Text()
 	feedingText := page.Find("h2:contains('Feeding')").First().Next().Text()
@@ -85,11 +57,16 @@ func (r *audubonResponse) propertySearchers() *propertySearchers {
 	allText := page.Find("body").Text()
 
 	return &propertySearchers{
-		food:       searchIn(dietText + feedingText),
-		nestType:   searchIn(nestingText),
-		habitat:    searchIn(habitatText + nestingText),
-		clutchSize: searchIn(eggsText + nestingText),
-		eggColor:   searchIn(eggsText),
-		all:        searchIn(allText),
+		// Wingspan is omitted, it isn't consistently helpful.
+		clutchSize: attributedSearch(&r.Response.Attribution, eggsText+nestingText),
+		eggColor:   attributedSearch(&r.Response.Attribution, eggsText),
+		// Fun fact is omitted, it's not reliably fun.
+
+		food:     attributedSearch(&r.Response.Attribution, dietText+feedingText),
+		nestType: attributedSearch(&r.Response.Attribution, nestingText),
+		habitat:  attributedSearch(&r.Response.Attribution, habitatText+nestingText),
+
+		predator: attributedSearch(&r.Response.Attribution, allText),
+		flocking: attributedSearch(&r.Response.Attribution, allText),
 	}
 }

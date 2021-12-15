@@ -2,18 +2,120 @@ package bird_data_guessing
 
 import (
 	"encoding/xml"
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path/filepath"
-	"reflect"
+	"net/url"
 	"strings"
 	"time"
 
+	"github.com/gbdubs/amass"
 	"github.com/gbdubs/attributions"
 )
+
+type wikipediaResponse struct {
+	Response           amass.GetResponse
+	decodedApiResponse wikipediaApiResponse
+	hasBeenDecoded     bool
+}
+
+const (
+	wikipediaSite                  = "wikipedia"
+	maxWikipediaConcurrentRequests = 2
+)
+
+func createWikipediaRequest(latinName string) *amass.GetRequest {
+	v := url.Values{}
+	v.Add("action", "query")
+	v.Add("prop", "cirrusdoc|info")
+	v.Add("format", "xml")
+	v.Add("inprop", "url")
+	v.Add("titles", latinName)
+	url := "https://en.wikipedia.org/w/api.php?" + v.Encode()
+	return &amass.GetRequest{
+		Site:                      wikipediaSite,
+		RequestKey:                latinName,
+		URL:                       url,
+		SiteMaxConcurrentRequests: maxWikipediaConcurrentRequests,
+		Attribution: attributions.Attribution{
+			Author:              "National Wikipedia Society, Inc.",
+			AuthorUrl:           "https://wikipedia.org",
+			License:             "Creative Commons Attribution-ShareAlike 3.0 Unported License (CC BY-SA)",
+			LicenseUrl:          "https://en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License",
+			ScrapingMethodology: "github.com/gbdubs/bird_data_guessing/wikipedia",
+		},
+	}
+}
+
+func reconstructWikipediaResponses(responses []*amass.GetResponse) []*wikipediaResponse {
+	result := make([]*wikipediaResponse, 0)
+	for _, response := range responses {
+		if response.Site != wikipediaSite {
+			continue
+		}
+		wr := &wikipediaResponse{
+			Response: *response,
+		}
+		wr.tweakResponse()
+		result = append(result, wr)
+	}
+	return result
+}
+
+func (r *wikipediaResponse) tweakResponse() {
+	sourceTimestamp := r.resp().Query.Pages.Page.Cirrusdoc.V.Source.Timestamp
+	if sourceTimestamp == "" {
+		sourceTimestamp = r.resp().Query.Pages.Page.Touched
+	}
+	createdAt, err := time.Parse(time.RFC3339, sourceTimestamp)
+	if err != nil {
+		panic(fmt.Errorf("Error when looking at element %s: %v", r.englishName(), err))
+	}
+	r.Response.Attribution.OriginUrl = r.resp().Query.Pages.Page.Canonicalurl
+	r.Response.Attribution.OriginalTitle = r.resp().Query.Pages.Page.Title
+	r.Response.Attribution.CreatedAt = createdAt
+}
+
+func (r *wikipediaResponse) englishName() string {
+	return r.resp().Query.Pages.Page.Cirrusdoc.V.Source.Title
+}
+
+func (r *wikipediaResponse) resp() wikipediaApiResponse {
+	if !r.hasBeenDecoded {
+		err := r.Response.AsXMLObject(&r.decodedApiResponse)
+		if err != nil {
+			panic(fmt.Errorf("Couldn't decode XML for wikipedia response: %v", err))
+		}
+		r.hasBeenDecoded = true
+	}
+	return r.decodedApiResponse
+}
+
+func (r *wikipediaResponse) propertySearchers() *propertySearchers {
+	s := r.resp().Query.Pages.Page.Cirrusdoc.V.Source
+	t := s.AttrText
+	for _, at := range s.AuxiliaryText.V {
+		t += " " + at
+	}
+	// Strips out Unicode spaces (ex: NBSP)
+	t = strings.Join(strings.Fields(t), " ")
+	searcher := attributedSearch(&r.Response.Attribution, t)
+	return &propertySearchers{
+		food:       searcher,
+		nestType:   searcher,
+		habitat:    searcher,
+		funFact:    searcher,
+		eggColor:   searcher,
+		wingspan:   searcher,
+		clutchSize: searcher,
+		predator:   searcher,
+		flocking:   searcher,
+	}
+}
+
+/* I'll probably need this in the near future when I improve the missing logic
+func (r *wikipediaResponse) isMissingCirrusdoc() bool {
+	return reflect.DeepEqual(r.resp().Query.Pages.Page.Cirrusdoc, cirrusdoc{})
+}
+*/
 
 type cirrusdoc struct {
 	Text string `xml:",chardata"`
@@ -93,7 +195,7 @@ type cirrusdoc struct {
 }
 
 // Generated from https://www.onlinetool.io/xmltogo/
-type wikipediaResponse struct {
+type wikipediaApiResponse struct {
 	XMLName       xml.Name `xml:"api"`
 	Text          string   `xml:",chardata"`
 	Batchcomplete string   `xml:"batchcomplete,attr"`
@@ -124,122 +226,4 @@ type wikipediaResponse struct {
 	} `xml:"query"`
 	CollectedAt time.Time
 	NotFound    bool
-}
-
-func getWikipediaResponse(latinName string) (*wikipediaResponse, error) {
-	var wr wikipediaResponse
-	r := &wr
-	missingKey := "wikipedia/" + latinName
-	if isKnownMissing(missingKey) {
-		return r, missingError(missingKey)
-	}
-	memoizedFileName := "/tmp/bird_data_guessing/wikipedia/" + latinName + ".xml"
-	fileBytes, err := ioutil.ReadFile(memoizedFileName)
-	if err == nil {
-		err := xml.Unmarshal(fileBytes, r)
-		if err != nil || !r.isMissingCirrusdoc() {
-			return r, err
-		}
-	}
-	req, err := http.NewRequest("GET", "https://en.wikipedia.org/w/api.php", nil)
-	if err != nil {
-		return r, err
-	}
-	q := req.URL.Query()
-	q.Add("action", "query")
-	q.Add("prop", "cirrusdoc|info")
-	q.Add("format", "xml")
-	q.Add("inprop", "url")
-	q.Add("titles", latinName)
-	req.URL.RawQuery = q.Encode()
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return r, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 404 {
-		markMissing(missingKey)
-		return r, missingError(missingKey)
-	}
-	if resp.StatusCode != 200 {
-		return r, errors.New(fmt.Sprintf("Request failed: %d %s", resp.StatusCode, resp.Status))
-	}
-	asBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return r, err
-	}
-	err = xml.Unmarshal(asBytes, &r)
-	if err != nil {
-		return r, err
-	}
-	if r.Query.Pages.Page.Idx == "-1" {
-		return r, errors.New(fmt.Sprintf("404: Bird wasn't found: %s", req.URL))
-	}
-	r.CollectedAt = time.Now()
-	asBytes, err = xml.MarshalIndent(r, "", " ")
-	if err != nil {
-		return r, err
-	}
-	err = os.MkdirAll(filepath.Dir(memoizedFileName), 0777)
-	if err != nil {
-		return r, err
-	}
-	err = ioutil.WriteFile(memoizedFileName, asBytes, 0777)
-	return r, err
-}
-
-func (r *wikipediaResponse) isMissingCirrusdoc() bool {
-	return reflect.DeepEqual(r.Query.Pages.Page.Cirrusdoc, cirrusdoc{})
-}
-
-func (r *wikipediaResponse) getText() string {
-	s := r.Query.Pages.Page.Cirrusdoc.V.Source
-	t := s.AttrText
-	for _, at := range s.AuxiliaryText.V {
-		t += " " + at
-	}
-	// Strips out Unicode spaces (ex: NBSP)
-	return strings.Join(strings.Fields(t), " ")
-}
-
-func (r *wikipediaResponse) englishName() string {
-	return r.Query.Pages.Page.Cirrusdoc.V.Source.Title
-}
-
-func (r *wikipediaResponse) propertySearchers() *propertySearchers {
-	searcher := searchIn(r.getText())
-	return &propertySearchers{
-		food:       searcher,
-		nestType:   searcher,
-		habitat:    searcher,
-		funFact:    searcher,
-		eggColor:   searcher,
-		wingspan:   searcher,
-		clutchSize: searcher,
-		all:        searcher,
-	}
-}
-
-func (r *wikipediaResponse) attribution() *attributions.Attribution {
-	sourceTimestamp := r.Query.Pages.Page.Cirrusdoc.V.Source.Timestamp
-	if sourceTimestamp == "" {
-		sourceTimestamp = r.Query.Pages.Page.Touched
-	}
-	createdAt, err := time.Parse(time.RFC3339, sourceTimestamp)
-	if err != nil {
-		fmt.Printf("Error when looking at element: %s\n", r.englishName())
-		panic(err)
-	}
-	return &attributions.Attribution{
-		OriginUrl:           r.Query.Pages.Page.Canonicalurl,
-		CollectedAt:         r.CollectedAt,
-		OriginalTitle:       r.Query.Pages.Page.Title,
-		Author:              "Wikimedia Foundation",
-		AuthorUrl:           "https://wikimedia.org",
-		License:             "Creative Commons Attribution-ShareAlike 3.0 Unported License (CC BY-SA)",
-		LicenseUrl:          "https://en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License",
-		ScrapingMethodology: "github.com/gbdubs/bird_data_guessing",
-		Context:             []string{"Called Wikipedia's API with action=query, see api.go for details."},
-		CreatedAt:           createdAt,
-	}
 }

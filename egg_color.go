@@ -1,8 +1,12 @@
 package bird_data_guessing
 
-import "fmt"
+import (
+	"fmt"
 
-func (r *searcher) EggColor() *Property {
+	"github.com/gbdubs/inference"
+)
+
+func (r *searcher) EggColor() []*inference.String {
 	colors := "(white|whitish|cream|olive|brown|blue|pink|pinkish|redish|purple|green|tan|light)"
 	connectors := "(which are|are|were|was|which)"
 
@@ -15,5 +19,6 @@ func (r *searcher) EggColor() *Property {
 	patterns["Egg Color: (.+) Number of Eggs:"] = 1
 	// For All About Birds
 	patterns[`Egg Description:([^.]+)\.`] = 1
-	return r.ExtractAnyMatch(patterns)
+
+	return r.ZZZExtractAllMatches(patterns)
 }

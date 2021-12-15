@@ -1,7 +1,31 @@
 package bird_data_guessing
 
-import "testing"
+import (
+	"testing"
 
+	"github.com/gbdubs/inference"
+)
+
+func TestClutchSize_Wikipedia(t *testing.T) {
+	wikipediaClutchSize := func(n string) (*inference.IntRange, error) {
+		r, err := getWikipediaResponse(n)
+		if err != nil {
+			return &inference.IntRange{}, err
+		}
+		s := &r.propertySearchers().clutchSize
+		return s.ClutchSize(), err
+	}
+	runIntRangeTests(t, wikipediaClutchSize,
+		intRangeCase("Aythya valisineria", 5, 11),
+		intRangeCase("Cardinalis sinuatus", 2, 4),
+		intRangeCase("Cistothorus palustris", 4, 6),
+		intRangeCase("Passer domesticus", 6, 6),
+		intRangeCase("Pooecetes gramineus", 3, 5),
+		intRangeCase("Loxia leucoptera", 3, 5),
+		intRangeCase("Spinus pinus", 0, 0))
+}
+
+/*
 func TestClutchSize_WhatBird(t *testing.T) {
 	whatBirdClutchSize := func(n string) (*Property, error) {
 		r, err := getWhatBirdResponse(n)
@@ -71,3 +95,4 @@ func TestClutchSize_AllAboutBirds(t *testing.T) {
 		intCase("Downy woodpecker", 5),
 		intCase("Hermit thrush", 4))
 }
+*/

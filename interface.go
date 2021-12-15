@@ -1,6 +1,9 @@
 package bird_data_guessing
 
-import "github.com/gbdubs/attributions"
+import (
+	"github.com/gbdubs/attributions"
+	"github.com/gbdubs/inference"
+)
 
 type Input struct {
 	LatinName   string
@@ -9,61 +12,71 @@ type Input struct {
 }
 
 type Output struct {
-	Data         Data
-	DebugDatas   DebugDatas
+	ZZZData      ZZZData
 	Attributions []attributions.Attribution
 }
 
-type Data struct {
+type ZZZData struct {
 	EnglishName string
 	LatinName   string
-	// Food
-	WheatScore  int
-	WormScore   int
-	BerryScore  int
-	RatScore    int
-	FishScore   int
-	NectarScore int
-	// Habitat
-	ForestScore int
-	GrassScore  int
-	WaterScore  int
-	// Nest Type
-	CupScore      int
-	GroundScore   int
-	PlatformScore int
-	SlotScore     int
-	// Behavior
-	FlockingScore int
-	PredatorScore int
 	// Precice Properties
-	Wingspan   int
-	ClutchSize int
-	EggColor   string
-	FunFact    string
+	Wingspan   *inference.Float64Range
+	ClutchSize *inference.IntRange
+	EggColor   *inference.String
+	FunFact    *inference.String
+	// Scored Properties (affinity measure)
+	// Food
+	WheatScore  *inference.Int
+	WormScore   *inference.Int
+	BerryScore  *inference.Int
+	MouseScore  *inference.Int
+	FishScore   *inference.Int
+	NectarScore *inference.Int
+	// Habitat
+	ForestScore *inference.Int
+	GrassScore  *inference.Int
+	WaterScore  *inference.Int
+	// Nest Type
+	CupScore      *inference.Int
+	GroundScore   *inference.Int
+	PlatformScore *inference.Int
+	CavityScore   *inference.Int
+	// Behavior
+	FlockingScore *inference.Int
+	PredatorScore *inference.Int
+}
+
+type zZZSingleSourceData struct {
+	EnglishName string
+	LatinName   string
+	// Precice Properties
+	Wingspan   []*inference.Float64Range
+	ClutchSize *inference.IntRange
+	EggColor   []*inference.String
+	FunFact    []*inference.String
+	// Scored Properties (affinity measure)
+	// Food
+	WheatScore  *inference.Int
+	WormScore   *inference.Int
+	BerryScore  *inference.Int
+	MouseScore  *inference.Int
+	FishScore   *inference.Int
+	NectarScore *inference.Int
+	// Habitat
+	ForestScore *inference.Int
+	GrassScore  *inference.Int
+	WaterScore  *inference.Int
+	// Nest Type
+	CupScore      *inference.Int
+	GroundScore   *inference.Int
+	PlatformScore *inference.Int
+	CavityScore   *inference.Int
+	// Behavior
+	FlockingScore *inference.Int
+	PredatorScore *inference.Int
 }
 
 // Debugging Types below this line
-
-type DebugDatas struct {
-	Wikipedia     DebugData
-	AllAboutBirds DebugData
-	Audubon       DebugData
-	WhatBird      DebugData
-}
-
-type DebugData struct {
-	Data        Data
-	Food        Food
-	NestType    NestType
-	ClutchSize  Property
-	Wingspan    Property
-	Habitat     Habitat
-	IsFlocking  Property
-	IsPredatory Property
-	FunFact     Property
-	EggColor    Property
-}
 
 type Habitat struct {
 	Forest Property

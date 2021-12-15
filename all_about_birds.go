@@ -1,108 +1,94 @@
 package bird_data_guessing
 
 import (
-	"encoding/xml"
-	"io/ioutil"
-	"os"
-	"path/filepath"
+	"fmt"
 	"strings"
-	"time"
 
+	"github.com/gbdubs/amass"
 	"github.com/gbdubs/attributions"
 )
 
 type allAboutBirdsResponse struct {
-	CollectedAt     time.Time
-	LifeHistoryURL  string
-	LifeHistoryHTML string
-	IdURL           string
-	IdHTML          string
-	OverviewURL     string
-	OverviewHTML    string
+	LifeHistory    amass.GetResponse
+	Identification amass.GetResponse
+	Overview       amass.GetResponse
 }
 
-func getAllAboutBirdsResponse(englishName string) (*allAboutBirdsResponse, error) {
-	var aabr allAboutBirdsResponse
-	r := &aabr
+const (
+	allAboutBirdsSite                  = "all_about_birds"
+	allAboutBirdsIdSuffix              = "id"
+	allAboutBirdsLifeHistorySuffix     = "lifehistory"
+	allAboutBirdsOverviewSuffix        = "overview"
+	allAboutBirdsMaxConcurrentRequests = 2
+)
 
-	missingKey := "all_about_birds/" + englishName
-	if isKnownMissing(missingKey) {
-		return r, missingError(missingKey)
+func createAllAboutBirdsRequests(englishName string) []*amass.GetRequest {
+	nameParam := strings.ReplaceAll(englishName, " ", "_")
+	requestKeyPrefix := strings.ToLower(nameParam)
+	makeReq := func(page string) *amass.GetRequest {
+		return &amass.GetRequest{
+			Site:                      allAboutBirdsSite,
+			RequestKey:                requestKeyPrefix + "_" + page,
+			URL:                       fmt.Sprintf("https://allaboutbirds.org/guide/%s/%s", nameParam, page),
+			SiteMaxConcurrentRequests: allAboutBirdsMaxConcurrentRequests,
+			Attribution: attributions.Attribution{
+				Author:              "The Cornell Lab of Ornithology",
+				AuthorUrl:           "https://www.birds.cornell.edu",
+				LicenseUrl:          "https://www.birds.cornell.edu/home/terms-of-use",
+				ScrapingMethodology: "github.com/gbdubs/bird_data_guessing/all_about_birds",
+			},
+		}
 	}
-
-	memoizedFileName := "/tmp/bird_data_guessing/all_about_birds/" + englishName + ".xml"
-	fileBytes, err := ioutil.ReadFile(memoizedFileName)
-	if err == nil {
-		err := xml.Unmarshal(fileBytes, r)
-		return r, err
+	return []*amass.GetRequest{
+		makeReq(allAboutBirdsOverviewSuffix),
+		makeReq(allAboutBirdsIdSuffix),
+		makeReq(allAboutBirdsLifeHistorySuffix),
 	}
-
-	nameParam := strings.Replace(englishName, " ", "_", -1)
-	url := "https://allaboutbirds.org/guide/" + nameParam
-
-	r.IdURL = url + "/id"
-	idPage, err := getDocumentFromUrl(r.IdURL, missingKey)
-	if err != nil {
-		return r, err
-	}
-	r.IdHTML, err = idPage.Html()
-	if err != nil {
-		return r, err
-	}
-
-	r.LifeHistoryURL = url + "/lifehistory"
-	lifeHistoryPage, err := getDocumentFromUrl(r.LifeHistoryURL, missingKey)
-	if err != nil {
-		return r, err
-	}
-	r.LifeHistoryHTML, err = lifeHistoryPage.Html()
-	if err != nil {
-		return r, err
-	}
-
-	r.OverviewURL = url + "/overview"
-	overviewPage, err := getDocumentFromUrl(r.OverviewURL, missingKey)
-	if err != nil {
-		return r, err
-	}
-	r.OverviewHTML, err = overviewPage.Html()
-	if err != nil {
-		return r, err
-	}
-
-	r.CollectedAt = time.Now()
-
-	asBytes, err := xml.MarshalIndent(r, "", "  ")
-	if err != nil {
-		return r, err
-	}
-	err = os.MkdirAll(filepath.Dir(memoizedFileName), 0777)
-	if err != nil {
-		return r, err
-	}
-	err = ioutil.WriteFile(memoizedFileName, asBytes, 0777)
-	return r, err
 }
 
-func (r *allAboutBirdsResponse) attribution() *attributions.Attribution {
-	lifeHistoryPage := getDocumentFromString(r.LifeHistoryHTML)
-	return &attributions.Attribution{
-		OriginUrl:           r.IdURL,
-		CollectedAt:         r.CollectedAt,
-		OriginalTitle:       lifeHistoryPage.Find("title").First().Text(),
-		Author:              "The Cornell Lab of Ornithology",
-		AuthorUrl:           "https://www.birds.cornell.edu",
-		LicenseUrl:          "https://www.birds.cornell.edu/home/terms-of-use",
-		ScrapingMethodology: "github.com/gbdubs/bird_data_guessing",
-		Context:             []string{"HTTP requested the bird information with URL guessing."},
+func reconstructAllAboutBirdsResponses(responses []*amass.GetResponse) []*allAboutBirdsResponse {
+	m := make(map[string]map[string]*amass.GetResponse)
+	m[allAboutBirdsOverviewSuffix] = make(map[string]*amass.GetResponse)
+	m[allAboutBirdsIdSuffix] = make(map[string]*amass.GetResponse)
+	m[allAboutBirdsLifeHistorySuffix] = make(map[string]*amass.GetResponse)
+	birdKeys := make(map[string]bool)
+	for _, response := range responses {
+		if response.Site != allAboutBirdsSite {
+			continue
+		}
+		page := ""
+		if strings.HasSuffix(response.RequestKey, allAboutBirdsIdSuffix) {
+			page = allAboutBirdsIdSuffix
+		} else if strings.HasSuffix(response.RequestKey, allAboutBirdsOverviewSuffix) {
+			page = allAboutBirdsOverviewSuffix
+		} else if strings.HasSuffix(response.RequestKey, allAboutBirdsLifeHistorySuffix) {
+			page = allAboutBirdsLifeHistorySuffix
+		} else {
+			panic(fmt.Errorf("Unrecongnized response request key %s for all about birds.", response.RequestKey))
+		}
+		birdKey := strings.ReplaceAll(response.RequestKey, "_"+page, "")
+		birdKeys[birdKey] = true
+		m[page][birdKey] = response
 	}
+	result := make([]*allAboutBirdsResponse, len(birdKeys))
+	i := 0
+	for birdKey, _ := range birdKeys {
+		result[i] = &allAboutBirdsResponse{
+			Identification: *m[allAboutBirdsIdSuffix][birdKey],
+			LifeHistory:    *m[allAboutBirdsLifeHistorySuffix][birdKey],
+			Overview:       *m[allAboutBirdsOverviewSuffix][birdKey],
+		}
+		i++
+	}
+	return result
 }
 
 func (r *allAboutBirdsResponse) propertySearchers() *propertySearchers {
-	overviewPage := getDocumentFromString(r.OverviewHTML)
-	idPage := getDocumentFromString(r.IdHTML)
-	lifeHistoryPage := getDocumentFromString(r.LifeHistoryHTML)
+	overviewPage := r.Overview.AsDocument()
+	idPage := r.Identification.AsDocument()
+	lifeHistoryPage := r.LifeHistory.AsDocument()
 
+	wingspanText := idPage.Find("h5:contains('measurements')").Next().Text()
 	idText := idPage.Find("main").First().Text()
 	habitatText := lifeHistoryPage.Find("[aria-labelledby=habitat]").First().Text()
 	foodText := lifeHistoryPage.Find("[aria-labelledby=food]").First().Text()
@@ -110,12 +96,16 @@ func (r *allAboutBirdsResponse) propertySearchers() *propertySearchers {
 	behaviorText := lifeHistoryPage.Find("[aria-labelledby=behavior]").First().Text()
 	coolFactsText := overviewPage.Find("ul:contains('Cool Facts')").Text()
 	return &propertySearchers{
-		food:       searchIn(foodText),
-		nestType:   searchIn(nestingText),
-		habitat:    searchIn(habitatText),
-		funFact:    searchIn(coolFactsText + behaviorText),
-		clutchSize: searchIn(nestingText + behaviorText),
-		eggColor:   searchIn(nestingText),
-		all:        searchIn(habitatText + foodText + nestingText + behaviorText + coolFactsText + idText),
+		wingspan:   attributedSearch(&r.Identification.Attribution, wingspanText),
+		clutchSize: attributedSearch(&r.LifeHistory.Attribution, nestingText),
+		eggColor:   attributedSearch(&r.LifeHistory.Attribution, nestingText),
+		funFact:    attributedSearch(&r.Overview.Attribution, coolFactsText+behaviorText),
+
+		food:     attributedSearch(&r.LifeHistory.Attribution, foodText),
+		nestType: attributedSearch(&r.LifeHistory.Attribution, nestingText),
+		habitat:  attributedSearch(&r.LifeHistory.Attribution, habitatText),
+
+		predator: attributedSearch(&r.Overview.Attribution, foodText+behaviorText+coolFactsText+idText),
+		flocking: attributedSearch(&r.Overview.Attribution, behaviorText+coolFactsText+idText+nestingText),
 	}
 }
