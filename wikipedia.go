@@ -22,17 +22,17 @@ const (
 	maxWikipediaConcurrentRequests = 2
 )
 
-func createWikipediaRequest(latinName string) *amass.GetRequest {
+func createWikipediaRequest(name BirdName) *amass.GetRequest {
 	v := url.Values{}
 	v.Add("action", "query")
 	v.Add("prop", "cirrusdoc|info")
 	v.Add("format", "xml")
 	v.Add("inprop", "url")
-	v.Add("titles", latinName)
+	v.Add("titles", name.LatinName)
 	url := "https://en.wikipedia.org/w/api.php?" + v.Encode()
-	return &amass.GetRequest{
+	result := &amass.GetRequest{
 		Site:                      wikipediaSite,
-		RequestKey:                latinName,
+		RequestKey:                name.LatinName,
 		URL:                       url,
 		SiteMaxConcurrentRequests: maxWikipediaConcurrentRequests,
 		Attribution: attributions.Attribution{
@@ -43,10 +43,12 @@ func createWikipediaRequest(latinName string) *amass.GetRequest {
 			ScrapingMethodology: "github.com/gbdubs/bird_data_guessing/wikipedia",
 		},
 	}
+	result.SetRoundTripData(name)
+	return result
 }
 
-func reconstructWikipediaResponses(responses []*amass.GetResponse) []*wikipediaResponse {
-	result := make([]*wikipediaResponse, 0)
+func reconstructWikipediaResponsesKeyedByLatinName(responses []*amass.GetResponse) map[string]*wikipediaResponse {
+	result := make(map[string]*wikipediaResponse)
 	for _, response := range responses {
 		if response.Site != wikipediaSite {
 			continue
@@ -54,10 +56,18 @@ func reconstructWikipediaResponses(responses []*amass.GetResponse) []*wikipediaR
 		wr := &wikipediaResponse{
 			Response: *response,
 		}
+		birdName := BirdName{}
+		response.GetRoundTripData(birdName)
 		wr.tweakResponse()
-		result = append(result, wr)
+		result[birdName.LatinName] = wr
 	}
 	return result
+}
+
+func (r *wikipediaResponse) BirdName() *BirdName {
+	bn := &BirdName{}
+	r.Response.GetRoundTripData(bn)
+	return bn
 }
 
 func (r *wikipediaResponse) tweakResponse() {

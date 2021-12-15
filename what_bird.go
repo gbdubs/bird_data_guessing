@@ -22,8 +22,8 @@ const (
 	whatBirdMaxConcurrentRequests = 2
 )
 
-func createWhatBirdsRequests(englishName string) []*amass.GetRequest {
-	nameParam := strings.ToLower(strings.ReplaceAll(englishName, " ", "_"))
+func createWhatBirdRequests(birdName BirdName) []*amass.GetRequest {
+	nameParam := strings.ToLower(strings.ReplaceAll(birdName.EnglishName, " ", "_"))
 	whatBirdId := whatBirdIdMap[nameParam]
 	if whatBirdId == 0 {
 		nameParam = strings.ReplaceAll(nameParam, "'", "")
@@ -36,7 +36,7 @@ func createWhatBirdsRequests(englishName string) []*amass.GetRequest {
 		url := fmt.Sprintf(
 			"https://identify.whatbird.com/obj/%d/%s/%s.aspx",
 			whatBirdId, page, nameParam)
-		return &amass.GetRequest{
+		req := &amass.GetRequest{
 			Site:                      whatBirdSite,
 			RequestKey:                nameParam + "_" + page,
 			URL:                       url,
@@ -48,6 +48,8 @@ func createWhatBirdsRequests(englishName string) []*amass.GetRequest {
 				ScrapingMethodology: "github.com/gbdubs/bird_data_guessing/what_bird",
 			},
 		}
+		req.SetRoundTripData(birdName)
+		return req
 	}
 	return []*amass.GetRequest{
 		makeReq(whatBirdOverviewPage),
@@ -56,12 +58,12 @@ func createWhatBirdsRequests(englishName string) []*amass.GetRequest {
 	}
 }
 
-func reconstructWhatBirdsResponses(responses []*amass.GetResponse) []*whatBirdResponse {
+func reconstructWhatBirdsResponsesKeyedByLatinName(responses []*amass.GetResponse) map[string]*whatBirdResponse {
 	m := make(map[string]map[string]*amass.GetResponse)
 	m[whatBirdOverviewPage] = make(map[string]*amass.GetResponse)
 	m[whatBirdIdPage] = make(map[string]*amass.GetResponse)
 	m[whatBirdBehaviorPage] = make(map[string]*amass.GetResponse)
-	birdKeys := make(map[string]bool)
+	latinNames := make(map[string]bool)
 	for _, response := range responses {
 		if response.Site != whatBirdSite {
 			continue
@@ -76,19 +78,19 @@ func reconstructWhatBirdsResponses(responses []*amass.GetResponse) []*whatBirdRe
 		} else {
 			panic(fmt.Errorf("Unrecongnized response request key %s for what bird.", response.RequestKey))
 		}
-		birdKey := strings.ReplaceAll(response.RequestKey, "_"+page, "")
-		birdKeys[birdKey] = true
-		m[page][birdKey] = response
+		birdName := &BirdName{}
+		response.GetRoundTripData(birdName)
+		latinName := birdName.LatinName
+		latinNames[latinName] = true
+		m[page][latinName] = response
 	}
-	result := make([]*whatBirdResponse, len(birdKeys))
-	i := 0
-	for birdKey, _ := range birdKeys {
-		result[i] = &whatBirdResponse{
-			Identification: *m[whatBirdIdPage][birdKey],
-			Behavior:       *m[whatBirdBehaviorPage][birdKey],
-			Overview:       *m[whatBirdOverviewPage][birdKey],
+	result := make(map[string]*whatBirdResponse)
+	for latinName, _ := range latinNames {
+		result[latinName] = &whatBirdResponse{
+			Identification: *m[whatBirdIdPage][latinName],
+			Behavior:       *m[whatBirdBehaviorPage][latinName],
+			Overview:       *m[whatBirdOverviewPage][latinName],
 		}
-		i++
 	}
 	return result
 }

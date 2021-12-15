@@ -23,7 +23,7 @@ func (s *searcher) ClutchSize() *inference.IntRange {
 		m[fmt.Sprintf("la(id|y)%segg%s%s", np, np, r)] = 2
 		m[fmt.Sprintf("number of eggs%s%s", np, r)] = 1
 		m[fmt.Sprintf(`Eggs\s*(usually|from)?\s*%s`, r)] = 2
-		match = s.ZZZExtractAnyMatch(m)
+		match = s.ExtractAnyMatch(m)
 		if *match != (inference.String{}) {
 			break
 		}

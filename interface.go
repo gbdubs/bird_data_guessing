@@ -1,24 +1,25 @@
 package bird_data_guessing
 
 import (
-	"github.com/gbdubs/attributions"
 	"github.com/gbdubs/inference"
 )
 
 type Input struct {
+	Birds []BirdName
+	Debug bool
+}
+
+type BirdName struct {
+	EnglishName string
 	LatinName   string
-	EnglishName string // Optional.
-	Debug       bool
 }
 
 type Output struct {
-	ZZZData      ZZZData
-	Attributions []attributions.Attribution
+	BirdData []BirdData
 }
 
-type ZZZData struct {
-	EnglishName string
-	LatinName   string
+type BirdData struct {
+	Name BirdName
 	// Precice Properties
 	Wingspan   *inference.Float64Range
 	ClutchSize *inference.IntRange
@@ -46,9 +47,8 @@ type ZZZData struct {
 	PredatorScore *inference.Int
 }
 
-type zZZSingleSourceData struct {
-	EnglishName string
-	LatinName   string
+type singleSourceData struct {
+	Name BirdName
 	// Precice Properties
 	Wingspan   []*inference.Float64Range
 	ClutchSize *inference.IntRange
@@ -74,35 +74,4 @@ type zZZSingleSourceData struct {
 	// Behavior
 	FlockingScore *inference.Int
 	PredatorScore *inference.Int
-}
-
-// Debugging Types below this line
-
-type Habitat struct {
-	Forest Property
-	Water  Property
-	Grass  Property
-}
-
-type Food struct {
-	Worm   Property
-	Wheat  Property
-	Berry  Property
-	Fish   Property
-	Rat    Property
-	Nectar Property
-}
-
-type NestType struct {
-	Ground   Property
-	Cup      Property
-	Slot     Property
-	Platform Property
-}
-
-type Property struct {
-	Strength    int
-	Context     string
-	StringValue string
-	IntValue    int
 }

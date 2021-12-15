@@ -29,13 +29,6 @@ type float64RangesTestCase struct {
 	expected [][2]float64
 }
 
-func stringCaseZZZ(n string, e string) stringTestCase {
-	return stringTestCase{
-		name:     n,
-		expected: e,
-	}
-}
-
 func stringCase(n string, e string) stringTestCase {
 	return stringTestCase{
 		name:     n,
@@ -69,41 +62,11 @@ func float64RangesCase(n string, vs ...float64) float64RangesTestCase {
 	}
 }
 
-type testStringBehavior func(englishOrLatinName string) (*Property, error)
-
-type testIntBehavior func(englishOrLatinName string) (*Property, error)
-
 type testIntRangeBehavior func(englishOrLatinName string) (*inference.IntRange, error)
 
-func runIntTests(t *testing.T, b testIntBehavior, testCases ...intTestCase) {
-	for _, c := range testCases {
-		p, err := b(c.name)
-		if err != nil {
-			t.Errorf(`case '%s' yielded error: %+v`, c.name, err)
-			continue
-		}
-		if c.expected != p.IntValue {
-			t.Errorf(`case %s assertion error - expected '%d' - was '%d' - debug: %+v`, c.name, c.expected, p.IntValue, p)
-		}
-	}
-}
+type testStringBehavior func(englishOrLatinName string) (*inference.String, error)
 
 func runStringTests(t *testing.T, b testStringBehavior, testCases ...stringTestCase) {
-	for _, c := range testCases {
-		p, err := b(c.name)
-		if err != nil {
-			t.Errorf(`case '%s' yielded error: %+v`, c.name, err)
-			continue
-		}
-		if c.expected != p.StringValue {
-			t.Errorf(`case %s assertion error - expected '%s' - was '%s' - debug: %+v`, c.name, c.expected, p.StringValue, p)
-		}
-	}
-}
-
-type testStringBehaviorZZZ func(englishOrLatinName string) (*inference.String, error)
-
-func runStringTestsZZZ(t *testing.T, b testStringBehaviorZZZ, testCases ...stringTestCase) {
 	for _, c := range testCases {
 		p, err := b(c.name)
 		if err != nil {

@@ -47,7 +47,7 @@ func (s *searcher) Wingspan() []*inference.Float64Range {
 					} else {
 						m[fmt.Sprintf("%s%s%s", p, e, keyword)] = 1
 					}
-					matches := s.ZZZExtractAllMatches(m)
+					matches := s.ExtractAllMatches(m)
 					if len(matches) > 0 {
 						for _, match := range matches {
 							twoParts := caseInsensitiveRegex(`(\d+)(\.\d+)? ?(to|-|–) ?(\d+)`).FindStringSubmatch(match.Value)

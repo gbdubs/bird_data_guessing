@@ -1,76 +1,60 @@
 package bird_data_guessing
 
+import "github.com/gbdubs/amass"
+
 func (i *Input) Execute() (*Output, error) {
-	oo := Output{}
+	oo := &Output{}
 
-	// TODO! :)
+	requests := make([]*amass.GetRequest, 0)
+	for _, bird := range i.Birds {
+		// The compiler doesn't allow two variadic args of the same type
+		requests = append(
+			requests,
+			createWikipediaRequest(bird),
+			createAudubonRequest(bird))
+		requests = append(requests,
+			createAllAboutBirdsRequests(bird)...)
+		requests = append(requests, createWhatBirdRequests(bird)...)
+	}
 
-	return &oo, nil
-	/*
-		o := &oo
-		dd := DebugDatas{}
-		var datas []Data
-		var attribs []attributions.Attribution
-		englishName := i.EnglishName
+	amasser := amass.Amasser{
+		TotalMaxConcurrentRequests: 10,
+		Verbose:                    true,
+		AllowedErrorProportion:     0.0,
+	}
+	responses, err := amasser.GetAll(requests)
+	if err != nil {
+		return oo, err
+	}
 
-		wResp, wErr := getWikipediaResponse(i.LatinName)
-		if wErr == nil {
-			englishName = wResp.englishName()
-			wData, wDebug := wResp.propertySearchers().getData(englishName)
-			dd.Wikipedia = *wDebug
-			datas = append(datas, *wData)
-			attribs = append(attribs, *wResp.attribution())
-		} else if strings.Contains(wErr.Error(), "404") {
-			// Nothing to do.
-		} else {
-			log.Printf("Wikipedia Error %+v", wErr)
+	latinToWikipedia := reconstructWikipediaResponsesKeyedByLatinName(responses)
+	latinToAllAboutBirds := reconstructAllAboutBirdsResponsesKeyedByLatinName(responses)
+	latinToAudubon := reconstructAudubonResponsesKeyedByLatinName(responses)
+	latinToWhatBird := reconstructWhatBirdsResponsesKeyedByLatinName(responses)
+
+	for _, bird := range i.Birds {
+		latin := bird.LatinName
+		allSources := make([]*singleSourceData, 0)
+		if w, ok := latinToWikipedia[latin]; ok {
+			allSources = append(allSources, w.propertySearchers().getData(bird))
 		}
-
-		aabResp, aabErr := getAllAboutBirdsResponse(englishName)
-		if aabErr == nil {
-			aabData, aabDebug := aabResp.propertySearchers().getData(englishName)
-			dd.AllAboutBirds = *aabDebug
-			datas = append(datas, *aabData)
-			attribs = append(attribs, *aabResp.attribution())
-		} else if strings.Contains(aabErr.Error(), "404") {
-			// Nothing to do.
-		} else {
-			log.Printf("All About Birds Error %+v", aabErr)
+		if a, ok := latinToAllAboutBirds[latin]; ok {
+			allSources = append(allSources, a.propertySearchers().getData(bird))
 		}
-
-		auResp, auErr := getAudubonResponse(englishName)
-		if auErr == nil {
-			auData, auDebug := auResp.propertySearchers().getData(englishName)
-			dd.Audubon = *auDebug
-			datas = append(datas, *auData)
-			attribs = append(attribs, *auResp.attribution())
-		} else if strings.Contains(auErr.Error(), "404") {
-			// Nothing to do.
-		} else {
-			log.Printf("Audubon Error %+v", auErr)
+		if a, ok := latinToAudubon[latin]; ok {
+			allSources = append(allSources, a.propertySearchers().getData(bird))
 		}
-
-		wbResp, wbErr := getWhatBirdResponse(englishName)
-		if wbErr == nil {
-			wbData, wbDebug := wbResp.propertySearchers().getData(englishName)
-			dd.WhatBird = *wbDebug
-			datas = append(datas, *wbData)
-			attribs = append(attribs, *wbResp.attribution())
-		} else if strings.Contains(wbErr.Error(), "404") {
-			// Nothing to do.
-		} else {
-			log.Printf("WhatBird Error %+v", auErr)
+		if w, ok := latinToWhatBird[latin]; ok {
+			allSources = append(allSources, w.propertySearchers().getData(bird))
 		}
-
-		if len(datas) == 0 {
-			return o, wErr
+		if len(allSources) == 0 {
+			continue
 		}
-
-		o.Attributions = attribs
-		o.Data = synthesizeDatas(i.LatinName, datas)
-		if i.Debug {
-			o.DebugDatas = dd
+		merged, highConfidence := mergeSources(allSources)
+		if highConfidence {
+			oo.BirdData = append(oo.BirdData, merged)
 		}
-		return o, nil
-	*/
+	}
+
+	return oo, nil
 }

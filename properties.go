@@ -16,34 +16,34 @@ type propertySearchers struct {
 	flocking   searcher
 }
 
-func (s *propertySearchers) getData(englishName string) *zZZSingleSourceData {
-	d := zZZSingleSourceData{}
+func (s *propertySearchers) getData(birdName BirdName) *singleSourceData {
+	d := singleSourceData{}
 
-	d.EnglishName = englishName
+	d.Name = birdName
 
 	d.Wingspan = s.wingspan.Wingspan()
 	d.ClutchSize = s.clutchSize.ClutchSize()
 	d.EggColor = s.eggColor.EggColor()
-	d.FunFact = s.funFact.FunFact(englishName)
+	d.FunFact = s.funFact.FunFact(birdName.EnglishName)
 
-	d.WormScore = s.food.ZZZCountMatches(wormKeywords...)
-	d.WheatScore = s.food.ZZZCountMatches(wheatKeywords...)
-	d.BerryScore = s.food.ZZZCountMatches(berryKeywords...)
-	d.MouseScore = s.food.ZZZCountMatches(mouseKeywords...)
-	d.FishScore = s.food.ZZZCountMatches(fishKeywords...)
-	d.NectarScore = s.food.ZZZCountMatches(nectarKeywords...)
+	d.WormScore = s.food.CountMatches(wormKeywords...)
+	d.WheatScore = s.food.CountMatches(wheatKeywords...)
+	d.BerryScore = s.food.CountMatches(berryKeywords...)
+	d.MouseScore = s.food.CountMatches(mouseKeywords...)
+	d.FishScore = s.food.CountMatches(fishKeywords...)
+	d.NectarScore = s.food.CountMatches(nectarKeywords...)
 
-	d.CavityScore = s.nestType.ZZZCountMatches(cavityKeywords...)
-	d.CupScore = s.nestType.ZZZCountMatches(cupKeywords...)
-	d.GroundScore = s.nestType.ZZZCountMatches(groundKeywords...)
-	d.PlatformScore = s.nestType.ZZZCountMatches(platformKeywords...)
+	d.CavityScore = s.nestType.CountMatches(cavityKeywords...)
+	d.CupScore = s.nestType.CountMatches(cupKeywords...)
+	d.GroundScore = s.nestType.CountMatches(groundKeywords...)
+	d.PlatformScore = s.nestType.CountMatches(platformKeywords...)
 
-	d.ForestScore = s.habitat.ZZZCountMatches(forestKeywords...)
-	d.GrassScore = s.habitat.ZZZCountMatches(grassKeywords...)
-	d.WaterScore = s.habitat.ZZZCountMatches(waterKeywords...)
+	d.ForestScore = s.habitat.CountMatches(forestKeywords...)
+	d.GrassScore = s.habitat.CountMatches(grassKeywords...)
+	d.WaterScore = s.habitat.CountMatches(waterKeywords...)
 
-	d.PredatorScore = s.predator.ZZZCountMatches(predatorKeywords...)
-	d.FlockingScore = s.flocking.ZZZCountMatches(flockingKeywords...)
+	d.PredatorScore = s.predator.CountMatches(predatorKeywords...)
+	d.FlockingScore = s.flocking.CountMatches(flockingKeywords...)
 
 	return &d
 }

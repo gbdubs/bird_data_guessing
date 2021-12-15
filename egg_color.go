@@ -20,5 +20,5 @@ func (r *searcher) EggColor() []*inference.String {
 	// For All About Birds
 	patterns[`Egg Description:([^.]+)\.`] = 1
 
-	return r.ZZZExtractAllMatches(patterns)
+	return r.ExtractAllMatches(patterns)
 }

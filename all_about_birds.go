@@ -22,11 +22,11 @@ const (
 	allAboutBirdsMaxConcurrentRequests = 2
 )
 
-func createAllAboutBirdsRequests(englishName string) []*amass.GetRequest {
-	nameParam := strings.ReplaceAll(englishName, " ", "_")
+func createAllAboutBirdsRequests(name BirdName) []*amass.GetRequest {
+	nameParam := strings.ReplaceAll(name.EnglishName, " ", "_")
 	requestKeyPrefix := strings.ToLower(nameParam)
 	makeReq := func(page string) *amass.GetRequest {
-		return &amass.GetRequest{
+		result := &amass.GetRequest{
 			Site:                      allAboutBirdsSite,
 			RequestKey:                requestKeyPrefix + "_" + page,
 			URL:                       fmt.Sprintf("https://allaboutbirds.org/guide/%s/%s", nameParam, page),
@@ -38,6 +38,8 @@ func createAllAboutBirdsRequests(englishName string) []*amass.GetRequest {
 				ScrapingMethodology: "github.com/gbdubs/bird_data_guessing/all_about_birds",
 			},
 		}
+		result.SetRoundTripData(name)
+		return result
 	}
 	return []*amass.GetRequest{
 		makeReq(allAboutBirdsOverviewSuffix),
@@ -46,12 +48,12 @@ func createAllAboutBirdsRequests(englishName string) []*amass.GetRequest {
 	}
 }
 
-func reconstructAllAboutBirdsResponses(responses []*amass.GetResponse) []*allAboutBirdsResponse {
+func reconstructAllAboutBirdsResponsesKeyedByLatinName(responses []*amass.GetResponse) map[string]*allAboutBirdsResponse {
 	m := make(map[string]map[string]*amass.GetResponse)
 	m[allAboutBirdsOverviewSuffix] = make(map[string]*amass.GetResponse)
 	m[allAboutBirdsIdSuffix] = make(map[string]*amass.GetResponse)
 	m[allAboutBirdsLifeHistorySuffix] = make(map[string]*amass.GetResponse)
-	birdKeys := make(map[string]bool)
+	latinNames := make(map[string]bool)
 	for _, response := range responses {
 		if response.Site != allAboutBirdsSite {
 			continue
@@ -66,19 +68,19 @@ func reconstructAllAboutBirdsResponses(responses []*amass.GetResponse) []*allAbo
 		} else {
 			panic(fmt.Errorf("Unrecongnized response request key %s for all about birds.", response.RequestKey))
 		}
-		birdKey := strings.ReplaceAll(response.RequestKey, "_"+page, "")
-		birdKeys[birdKey] = true
-		m[page][birdKey] = response
+		birdName := &BirdName{}
+		response.GetRoundTripData(birdName)
+		latinName := birdName.LatinName
+		latinNames[latinName] = true
+		m[page][latinName] = response
 	}
-	result := make([]*allAboutBirdsResponse, len(birdKeys))
-	i := 0
-	for birdKey, _ := range birdKeys {
-		result[i] = &allAboutBirdsResponse{
-			Identification: *m[allAboutBirdsIdSuffix][birdKey],
-			LifeHistory:    *m[allAboutBirdsLifeHistorySuffix][birdKey],
-			Overview:       *m[allAboutBirdsOverviewSuffix][birdKey],
+	result := make(map[string]*allAboutBirdsResponse)
+	for latinName, _ := range latinNames {
+		result[latinName] = &allAboutBirdsResponse{
+			Identification: *m[allAboutBirdsIdSuffix][latinName],
+			LifeHistory:    *m[allAboutBirdsLifeHistorySuffix][latinName],
+			Overview:       *m[allAboutBirdsOverviewSuffix][latinName],
 		}
-		i++
 	}
 	return result
 }

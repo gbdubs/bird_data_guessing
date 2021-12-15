@@ -16,9 +16,9 @@ const (
 	maxAudubonConcurrentRequests = 2
 )
 
-func createAudubonRequest(englishName string) *amass.GetRequest {
-	nameParam := strings.ReplaceAll(strings.ReplaceAll(englishName, " ", "-"), "'", "")
-	return &amass.GetRequest{
+func createAudubonRequest(birdName BirdName) *amass.GetRequest {
+	nameParam := strings.ReplaceAll(strings.ReplaceAll(birdName.EnglishName, " ", "-"), "'", "")
+	req := &amass.GetRequest{
 		Site:                      audubonSite,
 		RequestKey:                nameParam,
 		URL:                       "https://audubon.org/field-guide/bird/" + nameParam,
@@ -31,17 +31,21 @@ func createAudubonRequest(englishName string) *amass.GetRequest {
 			ScrapingMethodology: "github.com/gbdubs/bird_data_guessing/audubon",
 		},
 	}
+	req.SetRoundTripData(birdName)
+	return req
 }
 
-func reconstructAudubonResponses(responses []*amass.GetResponse) []*audubonResponse {
-	result := make([]*audubonResponse, 0)
+func reconstructAudubonResponsesKeyedByLatinName(responses []*amass.GetResponse) map[string]*audubonResponse {
+	result := make(map[string]*audubonResponse)
 	for _, response := range responses {
 		if response.Site != allAboutBirdsSite {
 			continue
 		}
-		result = append(result, &audubonResponse{
+		birdName := &BirdName{}
+		response.GetRoundTripData(birdName)
+		result[birdName.LatinName] = &audubonResponse{
 			Response: *response,
-		})
+		}
 	}
 	return result
 }
