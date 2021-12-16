@@ -2,10 +2,12 @@ package bird_data_guessing
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/gbdubs/amass"
 	"github.com/gbdubs/attributions"
+	"github.com/gbdubs/sitemaps"
 )
 
 type rspbResponse struct {
@@ -17,17 +19,39 @@ const (
 	maxRSPBConcurrentRequests = 2
 )
 
+var rspbSiteMap *sitemaps.Sitemap = nil
+
+func rspbSitemap() *sitemaps.Sitemap {
+	if rspbSiteMap == nil {
+		s, err := sitemaps.GetSitemapFromURL("https://www.rspb.org.uk/birds-and-wildlife/sitemap.xml")
+		if err != nil {
+			panic(err)
+		}
+		rspbSiteMap = s
+	}
+	return rspbSiteMap
+}
+
 func createRSPBRequests(birdName BirdName) []*amass.GetRequest {
+	sitemap := rspbSitemap()
 	if isMissing(rspbSite, birdName) {
 		return []*amass.GetRequest{}
 	}
 	nameParam := strings.ReplaceAll(strings.ReplaceAll(birdName.EnglishName, " ", "-"), "'", "")
+	url := "https://rspb.org.uk/birds-and-wildlife/wildlife-guides/bird-a-z/" + nameParam
+	actualUrl, levDist := sitemap.BestFuzzyMatch(url)
+	if levDist > 3 {
+		recordMissing(rspbSite, birdName)
+		return []*amass.GetRequest{}
+	}
+	requestKey := regexp.MustCompile("bird-a-z/(.+)/$").FindStringSubmatch(actualUrl)[1]
 	req := &amass.GetRequest{
 		Site:                      rspbSite,
-		RequestKey:                nameParam,
-		URL:                       "https://rspb.org.uk/birds-and-wildlife/wildlife-guides/bird-a-z/" + nameParam,
+		RequestKey:                requestKey,
+		URL:                       actualUrl,
 		SiteMaxConcurrentRequests: maxRSPBConcurrentRequests,
 		Attribution: attributions.Attribution{
+			CreatedAt:           sitemap.LastUpdated[actualUrl],
 			Author:              "The Royal Society for the Protection of Birds (RSPB)",
 			AuthorUrl:           "https://rspb.org.uk",
 			LicenseUrl:          "https://www.rspb.org.uk/help/terms--conditions",

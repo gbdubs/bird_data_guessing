@@ -57,6 +57,7 @@ func createAllAboutBirdsRequests(name BirdName) []*amass.GetRequest {
 			URL:                       actualUrl,
 			SiteMaxConcurrentRequests: allAboutBirdsMaxConcurrentRequests,
 			Attribution: attributions.Attribution{
+				CreatedAt:           sitemap.LastUpdated[actualUrl],
 				Author:              "The Cornell Lab of Ornithology",
 				AuthorUrl:           "https://www.birds.cornell.edu",
 				LicenseUrl:          "https://www.birds.cornell.edu/home/terms-of-use",
