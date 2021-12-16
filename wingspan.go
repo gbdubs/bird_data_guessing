@@ -40,7 +40,7 @@ func (s *searcher) Wingspan() []*inference.Float64Range {
 						scalingFactor = 2.54
 					}
 
-					p := fmt.Sprintf(`[^.\d]%s ?%s\)?`, numberRange, unit)
+					p := fmt.Sprintf(`[^.\d](%s ?%s)\)?`, numberRange, unit)
 					m := make(map[string]int)
 					if keywordFirst {
 						m[fmt.Sprintf("%s%s%s", keyword, e, p)] = 2
@@ -50,7 +50,7 @@ func (s *searcher) Wingspan() []*inference.Float64Range {
 					matches := s.ExtractAllMatches(m)
 					if len(matches) > 0 {
 						for _, match := range matches {
-							twoParts := caseInsensitiveRegex(`(\d+)(\.\d+)? ?(to|-|–) ?(\d+)`).FindStringSubmatch(match.Value)
+							twoParts := caseInsensitiveRegex(`(\d+)(\.\d+)? ?(to|-|–) ?(\d+)(\.\d+)? ?` + unit).FindStringSubmatch(match.Value)
 							if twoParts == nil {
 								v := floatOrFail(match.Value) * scalingFactor
 								results = append(results, &inference.Float64Range{

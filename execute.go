@@ -1,6 +1,9 @@
 package bird_data_guessing
 
-import "github.com/gbdubs/amass"
+import (
+	"github.com/davecgh/go-spew/spew"
+	"github.com/gbdubs/amass"
+)
 
 func (i *Input) Execute() (*Output, error) {
 	oo := &Output{}
@@ -20,7 +23,7 @@ func (i *Input) Execute() (*Output, error) {
 	amasser := amass.Amasser{
 		TotalMaxConcurrentRequests: 10,
 		Verbose:                    true,
-		AllowedErrorProportion:     0.0,
+		AllowedErrorProportion:     0.10,
 	}
 	responses, err := amasser.GetAll(requests)
 	if err != nil {
@@ -51,10 +54,13 @@ func (i *Input) Execute() (*Output, error) {
 			continue
 		}
 		merged, highConfidence := mergeSources(allSources)
+		merged.Name = bird
+		spew.Dump(merged)
 		if highConfidence {
-			oo.BirdData = append(oo.BirdData, merged)
+			oo.BirdData = append(oo.BirdData, *merged)
 		}
 	}
+	spew.Dump(oo)
 
 	return oo, nil
 }

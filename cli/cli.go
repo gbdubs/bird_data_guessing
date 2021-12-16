@@ -17,13 +17,12 @@ func main() {
 		Version: "1.0",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:    "latin_name",
-				Aliases: []string{"l"},
-				Usage:   "the latin name of the bird to look up",
+				Name:  "latin_name",
+				Usage: "the latin name of the bird to look up",
 			},
-			&cli.BoolFlag{
-				Name:  "debug",
-				Usage: "Whether or not to include debugging information, like where scores came from and which regexes they matched.",
+			&cli.StringFlag{
+				Name:  "english_name",
+				Usage: "the english name of the bird to look up",
 			},
 			&cli.BoolFlag{
 				Name:  "verbose",
@@ -32,25 +31,31 @@ func main() {
 		},
 		Action: func(c *cli.Context) error {
 			ln := c.String("latin_name")
+			en := c.String("english_name")
 			if ln == "" {
 				return errors.New("latin_name must be provided")
 			}
+			if en == "" {
+				return errors.New("english_name must be provided")
+			}
 			v := c.Bool("verbose")
-			d := c.Bool("debug")
 			input := &bird_data_guessing.Input{
-				LatinName: ln,
-				Debug:     d,
+				Birds: []bird_data_guessing.BirdName{
+					bird_data_guessing.BirdName{
+						LatinName:   ln,
+						EnglishName: en,
+					},
+				},
 			}
 			output, err := input.Execute()
 			if err != nil {
+				if v {
+					spew.Dump(err)
+				}
 				return err
 			}
 			if v {
-				spew.Dump(output.Data)
-				spew.Dump(output.Attributions)
-				if d {
-					spew.Dump(output.DebugDatas)
-				}
+				spew.Dump(output.BirdData)
 			}
 			return nil
 		},

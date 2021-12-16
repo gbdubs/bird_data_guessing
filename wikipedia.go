@@ -56,7 +56,7 @@ func reconstructWikipediaResponsesKeyedByLatinName(responses []*amass.GetRespons
 		wr := &wikipediaResponse{
 			Response: *response,
 		}
-		birdName := BirdName{}
+		birdName := &BirdName{}
 		response.GetRoundTripData(birdName)
 		wr.tweakResponse()
 		result[birdName.LatinName] = wr
