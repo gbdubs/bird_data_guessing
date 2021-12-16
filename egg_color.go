@@ -22,3 +22,5 @@ func (r *searcher) EggColor() []*inference.String {
 
 	return r.ExtractAllMatches(patterns)
 }
+
+// TODO further process this here!

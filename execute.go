@@ -15,6 +15,7 @@ func (i *Input) Execute() (*Output, error) {
 		requests = append(requests, createAudubonRequests(bird)...)
 		requests = append(requests, createAllAboutBirdsRequests(bird)...)
 		requests = append(requests, createWhatBirdRequests(bird)...)
+		requests = append(requests, createRSPBRequests(bird)...)
 	}
 
 	amasser := amass.Amasser{
@@ -31,6 +32,7 @@ func (i *Input) Execute() (*Output, error) {
 	latinToAllAboutBirds := reconstructAllAboutBirdsResponsesKeyedByLatinName(responses)
 	latinToAudubon := reconstructAudubonResponsesKeyedByLatinName(responses)
 	latinToWhatBird := reconstructWhatBirdsResponsesKeyedByLatinName(responses)
+	latinToRspb := reconstructRSPBResponsesKeyedByLatinName(responses)
 
 	for _, bird := range i.Birds {
 		latin := bird.LatinName
@@ -45,6 +47,9 @@ func (i *Input) Execute() (*Output, error) {
 			allSources = append(allSources, a.propertySearchers().getData(bird))
 		}
 		if w, ok := latinToWhatBird[latin]; ok {
+			allSources = append(allSources, w.propertySearchers().getData(bird))
+		}
+		if w, ok := latinToRspb[latin]; ok {
 			allSources = append(allSources, w.propertySearchers().getData(bird))
 		}
 		if len(allSources) == 0 {

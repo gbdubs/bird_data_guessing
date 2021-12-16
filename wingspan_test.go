@@ -48,6 +48,17 @@ func TestWingspan_AllAboutBirds(t *testing.T) {
 	)
 }
 
+func TestWingspan_RSPB(t *testing.T) {
+	rspbWingspan := func(englishName string) []*inference.Float64Range {
+		return rspbRequestForTesting(englishName).propertySearchers().wingspan.Wingspan()
+	}
+	testSliceRangeFloat64Cases(t, rspbWingspan,
+		unorderedSliceRangeFloat64Case("Stonechat", 18, 21),
+		unorderedSliceRangeFloat64Case("Temminck's Stint", 34, 37),
+		unorderedSliceRangeFloat64Case("Stone curlew", 77, 85),
+	)
+}
+
 // Audubon does not have reliable wingspan information.
 func TestWingspan_Audubon_NoContentInSearcher(t *testing.T) {
 	searcherText := audubonRequestForTesting("Bald eagle").propertySearchers().wingspan.text
