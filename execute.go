@@ -11,12 +11,9 @@ func (i *Input) Execute() (*Output, error) {
 	requests := make([]*amass.GetRequest, 0)
 	for _, bird := range i.Birds {
 		// The compiler doesn't allow two variadic args of the same type
-		requests = append(
-			requests,
-			createWikipediaRequest(bird),
-			createAudubonRequest(bird))
-		requests = append(requests,
-			createAllAboutBirdsRequests(bird)...)
+		requests = append(requests, createWikipediaRequest(bird)...)
+		requests = append(requests, createAudubonRequests(bird)...)
+		requests = append(requests, createAllAboutBirdsRequests(bird)...)
 		requests = append(requests, createWhatBirdRequests(bird)...)
 	}
 

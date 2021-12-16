@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
 	"time"
 
@@ -22,7 +23,11 @@ const (
 	maxWikipediaConcurrentRequests = 2
 )
 
-func createWikipediaRequest(name BirdName) *amass.GetRequest {
+func createWikipediaRequest(name BirdName) []*amass.GetRequest {
+	result := make([]*amass.GetRequest, 0)
+	if isMissing(wikipediaSite, name) {
+		return result
+	}
 	v := url.Values{}
 	v.Add("action", "query")
 	v.Add("prop", "cirrusdoc|info")
@@ -30,7 +35,7 @@ func createWikipediaRequest(name BirdName) *amass.GetRequest {
 	v.Add("inprop", "url")
 	v.Add("titles", name.LatinName)
 	url := "https://en.wikipedia.org/w/api.php?" + v.Encode()
-	result := &amass.GetRequest{
+	r := &amass.GetRequest{
 		Site:                      wikipediaSite,
 		RequestKey:                name.LatinName,
 		URL:                       url,
@@ -43,7 +48,8 @@ func createWikipediaRequest(name BirdName) *amass.GetRequest {
 			ScrapingMethodology: "github.com/gbdubs/bird_data_guessing/wikipedia",
 		},
 	}
-	result.SetRoundTripData(name)
+	r.SetRoundTripData(name)
+	result = append(result, r)
 	return result
 }
 
@@ -53,21 +59,23 @@ func reconstructWikipediaResponsesKeyedByLatinName(responses []*amass.GetRespons
 		if response.Site != wikipediaSite {
 			continue
 		}
+		birdName := &BirdName{}
+		response.GetRoundTripData(birdName)
 		wr := &wikipediaResponse{
 			Response: *response,
 		}
-		birdName := &BirdName{}
-		response.GetRoundTripData(birdName)
+		if wr.isWikipediaResponseMissing() {
+			recordMissing(wikipediaSite, *birdName)
+			continue
+		}
 		wr.tweakResponse()
 		result[birdName.LatinName] = wr
 	}
 	return result
 }
 
-func (r *wikipediaResponse) BirdName() *BirdName {
-	bn := &BirdName{}
-	r.Response.GetRoundTripData(bn)
-	return bn
+func (r *wikipediaResponse) isWikipediaResponseMissing() bool {
+	return r.Response.StatusCode == 404 || r.isMissingCirrusdoc()
 }
 
 func (r *wikipediaResponse) tweakResponse() {
@@ -75,13 +83,15 @@ func (r *wikipediaResponse) tweakResponse() {
 	if sourceTimestamp == "" {
 		sourceTimestamp = r.resp().Query.Pages.Page.Touched
 	}
-	createdAt, err := time.Parse(time.RFC3339, sourceTimestamp)
-	if err != nil {
-		panic(fmt.Errorf("Error when looking at element %s: %v", r.englishName(), err))
+	if sourceTimestamp != "" {
+		createdAt, err := time.Parse(time.RFC3339, sourceTimestamp)
+		if err != nil {
+			panic(fmt.Errorf("Error when looking at element %s: %v", r.englishName(), err))
+		}
+		r.Response.Attribution.CreatedAt = createdAt
 	}
 	r.Response.Attribution.OriginUrl = r.resp().Query.Pages.Page.Canonicalurl
 	r.Response.Attribution.OriginalTitle = r.resp().Query.Pages.Page.Title
-	r.Response.Attribution.CreatedAt = createdAt
 }
 
 func (r *wikipediaResponse) englishName() string {
@@ -121,11 +131,9 @@ func (r *wikipediaResponse) propertySearchers() *propertySearchers {
 	}
 }
 
-/* I'll probably need this in the near future when I improve the missing logic
 func (r *wikipediaResponse) isMissingCirrusdoc() bool {
 	return reflect.DeepEqual(r.resp().Query.Pages.Page.Cirrusdoc, cirrusdoc{})
 }
-*/
 
 type cirrusdoc struct {
 	Text string `xml:",chardata"`

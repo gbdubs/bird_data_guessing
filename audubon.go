@@ -16,7 +16,10 @@ const (
 	maxAudubonConcurrentRequests = 2
 )
 
-func createAudubonRequest(birdName BirdName) *amass.GetRequest {
+func createAudubonRequests(birdName BirdName) []*amass.GetRequest {
+	if isMissing(audubonSite, birdName) {
+		return []*amass.GetRequest{}
+	}
 	nameParam := strings.ReplaceAll(strings.ReplaceAll(birdName.EnglishName, " ", "-"), "'", "")
 	req := &amass.GetRequest{
 		Site:                      audubonSite,
@@ -32,22 +35,30 @@ func createAudubonRequest(birdName BirdName) *amass.GetRequest {
 		},
 	}
 	req.SetRoundTripData(birdName)
-	return req
+	return []*amass.GetRequest{req}
 }
 
 func reconstructAudubonResponsesKeyedByLatinName(responses []*amass.GetResponse) map[string]*audubonResponse {
 	result := make(map[string]*audubonResponse)
 	for _, response := range responses {
-		if response.Site != allAboutBirdsSite {
+		if response.Site != audubonSite {
 			continue
 		}
 		birdName := &BirdName{}
 		response.GetRoundTripData(birdName)
+		if isAudubonResponseMissing(response) {
+			recordMissing(audubonSite, *birdName)
+			continue
+		}
 		result[birdName.LatinName] = &audubonResponse{
 			Response: *response,
 		}
 	}
 	return result
+}
+
+func isAudubonResponseMissing(r *amass.GetResponse) bool {
+	return strings.Contains(r.AsDocument().Find("title").Text(), "Sorry, We Couldn't Find That Page")
 }
 
 func (r *audubonResponse) propertySearchers() *propertySearchers {

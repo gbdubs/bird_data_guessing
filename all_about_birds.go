@@ -2,7 +2,10 @@ package bird_data_guessing
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
+
+	"github.com/gbdubs/sitemaps"
 
 	"github.com/gbdubs/amass"
 	"github.com/gbdubs/attributions"
@@ -22,14 +25,36 @@ const (
 	allAboutBirdsMaxConcurrentRequests = 2
 )
 
+var allAboutBirdsSitemap *sitemaps.Sitemap = nil
+
+func aabSitemap() *sitemaps.Sitemap {
+	if allAboutBirdsSitemap == nil {
+		s, err := sitemaps.GetSitemapFromURL("https://www.allaboutbirds.org/guide/sitemap.xml")
+		if err != nil {
+			panic(err)
+		}
+		allAboutBirdsSitemap = s
+	}
+	return allAboutBirdsSitemap
+}
+
 func createAllAboutBirdsRequests(name BirdName) []*amass.GetRequest {
+	sitemap := aabSitemap()
 	nameParam := strings.ReplaceAll(name.EnglishName, " ", "_")
-	requestKeyPrefix := strings.ToLower(nameParam)
-	makeReq := func(page string) *amass.GetRequest {
-		result := &amass.GetRequest{
+	requests := make([]*amass.GetRequest, 0)
+
+	for _, page := range []string{allAboutBirdsOverviewSuffix, allAboutBirdsIdSuffix, allAboutBirdsLifeHistorySuffix} {
+		url := fmt.Sprintf("https://allaboutbirds.org/guide/%s/%s", nameParam, page)
+		actualUrl, levDist := sitemap.BestFuzzyMatch(url)
+		if levDist > 4 {
+			recordMissing(allAboutBirdsSite, name)
+			continue
+		}
+		requestKeyPrefix := regexp.MustCompile("allaboutbirds.org/guide/(.+)/.+/$").FindStringSubmatch(actualUrl)[1]
+		request := &amass.GetRequest{
 			Site:                      allAboutBirdsSite,
 			RequestKey:                requestKeyPrefix + "_" + page,
-			URL:                       fmt.Sprintf("https://allaboutbirds.org/guide/%s/%s", nameParam, page),
+			URL:                       actualUrl,
 			SiteMaxConcurrentRequests: allAboutBirdsMaxConcurrentRequests,
 			Attribution: attributions.Attribution{
 				Author:              "The Cornell Lab of Ornithology",
@@ -38,14 +63,10 @@ func createAllAboutBirdsRequests(name BirdName) []*amass.GetRequest {
 				ScrapingMethodology: "github.com/gbdubs/bird_data_guessing/all_about_birds",
 			},
 		}
-		result.SetRoundTripData(name)
-		return result
+		request.SetRoundTripData(name)
+		requests = append(requests, request)
 	}
-	return []*amass.GetRequest{
-		makeReq(allAboutBirdsOverviewSuffix),
-		makeReq(allAboutBirdsIdSuffix),
-		makeReq(allAboutBirdsLifeHistorySuffix),
-	}
+	return requests
 }
 
 func reconstructAllAboutBirdsResponsesKeyedByLatinName(responses []*amass.GetResponse) map[string]*allAboutBirdsResponse {

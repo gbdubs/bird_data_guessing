@@ -29,7 +29,7 @@ func createWhatBirdRequests(birdName BirdName) []*amass.GetRequest {
 		nameParam = strings.ReplaceAll(nameParam, "'", "")
 	}
 	if whatBirdId == 0 {
-		// TODO log this and figure out other naming modifications
+		recordMissing(whatBirdSite, birdName)
 		return []*amass.GetRequest{}
 	}
 	makeReq := func(page string) *amass.GetRequest {
