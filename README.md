@@ -1,6 +1,6 @@
 # Bird Data Estimation
 
-Given a bird's latin and english names, scrape wikipedia
+Given a bird's latin and english names, scrape the web
 to try to ascertain the association of the bird with several
 properties:
 
@@ -11,12 +11,15 @@ properties:
 - how many eggs do they typically lay?
 - what is a fun fact about them?
 
-This repository answers these questions by scraping wikipedia
-and attempting regex searches and word associations.
+This repository answers these questions by scraping several
+sites, mostly attempting regex searches and phrase extractions.
 
-Output is produced alongside an attribution that cites to the
-wikipedia page that sourced the information.
+Output is produced alongside a chain of atributions that cites
+to the pages that sourced the information, and how they were
+combined to produce the final result.
 
-Debug code has not been stripped out of this repository since
-determining why a given property was guessed is a valuable
-tool for debugging + explaning the results.
+This project has required me to spin off many of the sub-problems
+as reusable repos. That is a good thing, but makes versioning
+these much trickier. For now, since this code isn't ready for
+other people to look at, I just recommend waiting for it to be
+finished. :)
