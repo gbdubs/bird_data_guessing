@@ -23,7 +23,7 @@ const (
 	maxWikipediaConcurrentRequests = 2
 )
 
-func createWikipediaRequest(name BirdName) []*amass.GetRequest {
+func createWikipediaRequests(name BirdName) []*amass.GetRequest {
 	result := make([]*amass.GetRequest, 0)
 	if isMissing(wikipediaSite, name) {
 		return result
@@ -72,6 +72,20 @@ func reconstructWikipediaResponsesKeyedByLatinName(responses []*amass.GetRespons
 		result[birdName.LatinName] = wr
 	}
 	return result
+}
+
+func wikipediaRequestForTesting(latinName string) *wikipediaResponse {
+	bn := BirdName{LatinName: latinName}
+	rs := createWikipediaRequests(bn)
+	if len(rs) != 1 {
+		panic(fmt.Errorf("Expected 1 wikipedia request, was %d, for key %s.", len(rs), latinName))
+	}
+	resp, err := rs[0].Get()
+	if err != nil {
+		panic(fmt.Errorf("Get request failed for %s: %v", latinName, err))
+	}
+	m := reconstructWikipediaResponsesKeyedByLatinName([]*amass.GetResponse{resp})
+	return m[latinName]
 }
 
 func (r *wikipediaResponse) isWikipediaResponseMissing() bool {

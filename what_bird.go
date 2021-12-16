@@ -16,8 +16,8 @@ type whatBirdResponse struct {
 
 const (
 	whatBirdSite                  = "what_bird"
-	whatBirdIdPage                = "id"
-	whatBirdBehaviorPage          = "lifehistory"
+	whatBirdIdentificationPage    = "identification"
+	whatBirdBehaviorPage          = "behavior"
 	whatBirdOverviewPage          = "overview"
 	whatBirdMaxConcurrentRequests = 2
 )
@@ -27,6 +27,7 @@ func createWhatBirdRequests(birdName BirdName) []*amass.GetRequest {
 	whatBirdId := whatBirdIdMap[nameParam]
 	if whatBirdId == 0 {
 		nameParam = strings.ReplaceAll(nameParam, "'", "")
+		whatBirdId = whatBirdIdMap[nameParam]
 	}
 	if whatBirdId == 0 {
 		recordMissing(whatBirdSite, birdName)
@@ -53,7 +54,7 @@ func createWhatBirdRequests(birdName BirdName) []*amass.GetRequest {
 	}
 	return []*amass.GetRequest{
 		makeReq(whatBirdOverviewPage),
-		makeReq(whatBirdIdPage),
+		makeReq(whatBirdIdentificationPage),
 		makeReq(whatBirdBehaviorPage),
 	}
 }
@@ -61,7 +62,7 @@ func createWhatBirdRequests(birdName BirdName) []*amass.GetRequest {
 func reconstructWhatBirdsResponsesKeyedByLatinName(responses []*amass.GetResponse) map[string]*whatBirdResponse {
 	m := make(map[string]map[string]*amass.GetResponse)
 	m[whatBirdOverviewPage] = make(map[string]*amass.GetResponse)
-	m[whatBirdIdPage] = make(map[string]*amass.GetResponse)
+	m[whatBirdIdentificationPage] = make(map[string]*amass.GetResponse)
 	m[whatBirdBehaviorPage] = make(map[string]*amass.GetResponse)
 	latinNames := make(map[string]bool)
 	for _, response := range responses {
@@ -69,8 +70,8 @@ func reconstructWhatBirdsResponsesKeyedByLatinName(responses []*amass.GetRespons
 			continue
 		}
 		page := ""
-		if strings.HasSuffix(response.RequestKey, whatBirdIdPage) {
-			page = whatBirdIdPage
+		if strings.HasSuffix(response.RequestKey, whatBirdIdentificationPage) {
+			page = whatBirdIdentificationPage
 		} else if strings.HasSuffix(response.RequestKey, whatBirdOverviewPage) {
 			page = whatBirdOverviewPage
 		} else if strings.HasSuffix(response.RequestKey, whatBirdBehaviorPage) {
@@ -87,12 +88,27 @@ func reconstructWhatBirdsResponsesKeyedByLatinName(responses []*amass.GetRespons
 	result := make(map[string]*whatBirdResponse)
 	for latinName, _ := range latinNames {
 		result[latinName] = &whatBirdResponse{
-			Identification: *m[whatBirdIdPage][latinName],
+			Identification: *m[whatBirdIdentificationPage][latinName],
 			Behavior:       *m[whatBirdBehaviorPage][latinName],
 			Overview:       *m[whatBirdOverviewPage][latinName],
 		}
 	}
 	return result
+}
+
+func whatBirdRequestForTesting(englishName string) *whatBirdResponse {
+	latin := "not really a latin name"
+	bn := BirdName{EnglishName: englishName, LatinName: latin}
+	rs := createWhatBirdRequests(bn)
+	if len(rs) != 3 {
+		panic(fmt.Errorf("Expected 3 what bird request, was %d, for key %s.", len(rs), englishName))
+	}
+	resps, err := amass.AmasserForTests().GetAll(rs)
+	if err != nil {
+		panic(fmt.Errorf("GetAll request failed for %s: %v", englishName, err))
+	}
+	m := reconstructWhatBirdsResponsesKeyedByLatinName(resps)
+	return m[latin]
 }
 
 func (r *whatBirdResponse) propertySearchers() *propertySearchers {

@@ -1,6 +1,7 @@
 package bird_data_guessing
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gbdubs/amass"
@@ -55,6 +56,21 @@ func reconstructAudubonResponsesKeyedByLatinName(responses []*amass.GetResponse)
 		}
 	}
 	return result
+}
+
+func audubonRequestForTesting(englishName string) *audubonResponse {
+	latin := "any old string"
+	bn := BirdName{LatinName: latin, EnglishName: englishName}
+	rs := createAudubonRequests(bn)
+	if len(rs) != 1 {
+		panic(fmt.Errorf("Expected 1 audubon request, was %d, for key %s.", len(rs), englishName))
+	}
+	resp, err := rs[0].Get()
+	if err != nil {
+		panic(fmt.Errorf("Get request failed for %s: %v", englishName, err))
+	}
+	m := reconstructAudubonResponsesKeyedByLatinName([]*amass.GetResponse{resp})
+	return m[latin]
 }
 
 func isAudubonResponseMissing(r *amass.GetResponse) bool {

@@ -31,8 +31,11 @@ func attributedSearch(a *attributions.Attribution, s string) searcher {
 const defaultContextWidth = 30
 
 func (s *searcher) CountMatches(searchFor ...string) *inference.Int {
+	if s.text == "" {
+		return &inference.Int{}
+	}
 	components := make([]*inference.Int, 0)
-	for key, matches := range s.GetMatches(searchFor...) {
+	for key, matches := range s.getMatches(searchFor...) {
 		count := len(matches)
 		source := inference.CombineSources(
 			fmt.Sprintf("count of %s", key),
@@ -46,7 +49,7 @@ func (s *searcher) CountMatches(searchFor ...string) *inference.Int {
 	return inference.SumInt(components...)
 }
 
-func (s *searcher) GetMatches(searchFor ...string) map[string][]*inference.String {
+func (s *searcher) getMatches(searchFor ...string) map[string][]*inference.String {
 	m := make(map[string][]*inference.String)
 	for _, r := range searchFor {
 		regex := caseInsensitiveRegex(r)
@@ -73,6 +76,9 @@ func (s *searcher) boundedSubstring(start int, end int) string {
 }
 
 func (s *searcher) ExtractAllMatch(pattern string, captureGroup int) []*inference.String {
+	if s.text == "" {
+		return []*inference.String{}
+	}
 	matches := caseInsensitiveRegex(pattern).FindAllStringSubmatchIndex(s.text, -1)
 	if len(matches) == 0 {
 		return []*inference.String{}
@@ -90,6 +96,9 @@ func (s *searcher) ExtractAllMatch(pattern string, captureGroup int) []*inferenc
 }
 
 func (s *searcher) ExtractMatch(pattern string, captureGroup int) *inference.String {
+	if s.text == "" {
+		return &inference.String{}
+	}
 	matches := caseInsensitiveRegex(pattern).FindAllStringSubmatchIndex(s.text, -1)
 	if len(matches) == 0 {
 		return &inference.String{}

@@ -7,92 +7,51 @@ import (
 )
 
 func TestClutchSize_Wikipedia(t *testing.T) {
-	wikipediaClutchSize := func(n string) (*inference.IntRange, error) {
-		r, err := getWikipediaResponse(n)
-		if err != nil {
-			return &inference.IntRange{}, err
-		}
-		s := &r.propertySearchers().clutchSize
-		return s.ClutchSize(), err
+	wikipediaClutchSize := func(latinName string) *inference.IntRange {
+		return wikipediaRequestForTesting(latinName).propertySearchers().clutchSize.ClutchSize()
 	}
-	runIntRangeTests(t, wikipediaClutchSize,
-		intRangeCase("Aythya valisineria", 5, 11),
-		intRangeCase("Cardinalis sinuatus", 2, 4),
-		intRangeCase("Cistothorus palustris", 4, 6),
-		intRangeCase("Passer domesticus", 6, 6),
-		intRangeCase("Pooecetes gramineus", 3, 5),
-		intRangeCase("Loxia leucoptera", 3, 5),
-		intRangeCase("Spinus pinus", 0, 0))
+	testRangeIntCases(t, wikipediaClutchSize,
+		rangeIntCase("Aythya valisineria", 5, 11),
+		rangeIntCase("Cardinalis sinuatus", 2, 4),
+		rangeIntCase("Cistothorus palustris", 4, 6),
+		rangeIntCase("Passer domesticus", 6, 6),
+		rangeIntCase("Pooecetes gramineus", 3, 5),
+		rangeIntCase("Loxia leucoptera", 3, 5),
+		rangeIntCase("Spinus pinus", 0, 0))
 }
 
-/*
 func TestClutchSize_WhatBird(t *testing.T) {
-	whatBirdClutchSize := func(n string) (*Property, error) {
-		r, err := getWhatBirdResponse(n)
-		if err != nil {
-			return &Property{}, err
-		}
-		s := &r.propertySearchers().clutchSize
-		return s.ClutchSize(), err
+	whatBirdClutchSize := func(englishName string) *inference.IntRange {
+		return whatBirdRequestForTesting(englishName).propertySearchers().clutchSize.ClutchSize()
 	}
-	runIntTests(t, whatBirdClutchSize,
-		intCase("Striped Owl", 3),
-		intCase("Reed Bunting", 5),
-		intCase("Red-breasted Sapsucker", 4),
-		intCase("Thick-billed Murre", 1),
-		intCase("Thick-billed Parrot", 2),
-		intCase("Zenaida Dove", 2))
-}
-
-func TestClutchSize_Wikipedia(t *testing.T) {
-	wikipediaClutchSize := func(n string) (*Property, error) {
-		r, err := getWikipediaResponse(n)
-		if err != nil {
-			return &Property{}, err
-		}
-		s := &r.propertySearchers().clutchSize
-		return s.ClutchSize(), err
-	}
-	runIntTests(t, wikipediaClutchSize,
-		intCase("Aythya valisineria", 8),
-		intCase("Cardinalis sinuatus", 3),
-		intCase("Cistothorus palustris", 5),
-		intCase("Passer domesticus", 4),
-		intCase("Pooecetes gramineus", 4),
-		intCase("Loxia leucoptera", 4),
-		intCase("Spinus pinus", 0))
+	testRangeIntCases(t, whatBirdClutchSize,
+		rangeIntCase("Striped Owl", 2, 4),
+		rangeIntCase("Reed Bunting", 4, 6),
+		rangeIntCase("Red-breasted Sapsucker", 4, 5),
+		rangeIntCase("Thick-billed Murre", 1, 1),
+		rangeIntCase("Thick-billed Parrot", 1, 4),
+		rangeIntCase("Zenaida Dove", 2, 2))
 }
 
 func TestClutchSize_Audubon(t *testing.T) {
-	audubonClutchSize := func(n string) (*Property, error) {
-		r, err := getAudubonResponse(n)
-		if err != nil {
-			return &Property{}, err
-		}
-		s := &r.propertySearchers().clutchSize
-		return s.ClutchSize(), err
+	audubonClutchSize := func(englishName string) *inference.IntRange {
+		return audubonRequestForTesting(englishName).propertySearchers().clutchSize.ClutchSize()
 	}
-	runIntTests(t, audubonClutchSize,
-		intCase("Blue-gray gnatcatcher", 4),
-		intCase("Bushtit", 6),
-		intCase("Lucy's warbler", 4),
-		intCase("Red-faced warbler", 3))
+	testRangeIntCases(t, audubonClutchSize,
+		rangeIntCase("Blue-gray gnatcatcher", 4, 5),
+		rangeIntCase("Bushtit", 5, 7),
+		rangeIntCase("Lucy's warbler", 4, 5),
+		rangeIntCase("Red-faced warbler", 3, 4))
 }
 
 func TestClutchSize_AllAboutBirds(t *testing.T) {
-	allAboutBirdsClutchSize := func(n string) (*Property, error) {
-		r, err := getAllAboutBirdsResponse(n)
-		if err != nil {
-			return &Property{}, err
-		}
-		s := &r.propertySearchers().clutchSize
-		return s.ClutchSize(), err
+	allAboutBirdsClutchSize := func(englishName string) *inference.IntRange {
+		return allAboutBirdsRequestForTesting(englishName).propertySearchers().clutchSize.ClutchSize()
 	}
-	runIntTests(t, allAboutBirdsClutchSize,
-		intCase("Black-throated sparrow", 3),
-		intCase("Black-and-white warbler", 5),
-		intCase("Clay-colored sparrow", 0),
-		intCase("Downy woodpecker", 5),
-		intCase("Hermit thrush", 4))
+	testRangeIntCases(t, allAboutBirdsClutchSize,
+		rangeIntCase("Black-throated sparrow", 2, 5),
+		rangeIntCase("Black-and-white warbler", 4, 6),
+		rangeIntCase("Clay-colored sparrow", 0, 0),
+		rangeIntCase("Downy woodpecker", 3, 8),
+		rangeIntCase("Hermit thrush", 3, 6))
 }
-*/

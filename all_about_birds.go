@@ -106,12 +106,30 @@ func reconstructAllAboutBirdsResponsesKeyedByLatinName(responses []*amass.GetRes
 	return result
 }
 
+func allAboutBirdsRequestForTesting(englishName string) *allAboutBirdsResponse {
+	latin := "not really a latin name"
+	bn := BirdName{EnglishName: englishName, LatinName: latin}
+	rs := createAllAboutBirdsRequests(bn)
+	if len(rs) != 3 {
+		panic(fmt.Errorf("Expected 3 all about birds requests, was %d, for key %s.", len(rs), englishName))
+	}
+	resps, err := amass.AmasserForTests().GetAll(rs)
+	if err != nil {
+		panic(fmt.Errorf("GetAll request failed for %s: %v", englishName, err))
+	}
+	m := reconstructAllAboutBirdsResponsesKeyedByLatinName(resps)
+	return m[latin]
+}
+
 func (r *allAboutBirdsResponse) propertySearchers() *propertySearchers {
 	overviewPage := r.Overview.AsDocument()
 	idPage := r.Identification.AsDocument()
 	lifeHistoryPage := r.LifeHistory.AsDocument()
 
 	wingspanText := idPage.Find("h5:contains('measurements')").Next().Text()
+	if !strings.Contains(wingspanText, "Wingspan") {
+		wingspanText = ""
+	}
 	idText := idPage.Find("main").First().Text()
 	habitatText := lifeHistoryPage.Find("[aria-labelledby=habitat]").First().Text()
 	foodText := lifeHistoryPage.Find("[aria-labelledby=food]").First().Text()

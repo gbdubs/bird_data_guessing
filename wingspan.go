@@ -51,8 +51,11 @@ func (s *searcher) Wingspan() []*inference.Float64Range {
 					if len(matches) > 0 {
 						for _, match := range matches {
 							twoParts := caseInsensitiveRegex(`(\d+)(\.\d+)? ?(to|-|–) ?(\d+)(\.\d+)? ?` + unit).FindStringSubmatch(match.Value)
-							if twoParts == nil {
-								v := floatOrFail(match.Value) * scalingFactor
+							onePart := caseInsensitiveRegex(`(\d+(\.\d+)?) ?` + unit).FindStringSubmatch(match.Value)
+							if twoParts == nil && onePart == nil {
+								panic(fmt.Errorf("Error in regex structure for input %s.", match.Value))
+							} else if twoParts == nil {
+								v := floatOrFail(onePart[1]) * scalingFactor
 								results = append(results, &inference.Float64Range{
 									Min:    v,
 									Max:    v,
@@ -75,11 +78,7 @@ func (s *searcher) Wingspan() []*inference.Float64Range {
 		}
 		return results
 	}
-	r := findAllMatches(avgPhrases)
-	if len(r) > 0 {
-		return r
-	}
-	r = findAllMatches(wingspanPhrases)
+	r := append(findAllMatches(avgPhrases), findAllMatches(wingspanPhrases)...)
 	if len(r) > 0 {
 		return r
 	}
