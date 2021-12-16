@@ -54,6 +54,8 @@ func mergeClutchSize(inputs []*inference.IntRange) (*inference.IntRange, bool) {
 	maxMin := math.MinInt
 	minMax := math.MaxInt
 	maxMax := math.MinInt
+	minTotal := 0
+	maxTotal := 0
 	for _, input := range inputs {
 		if minMin > input.Min {
 			minMin = input.Min
@@ -67,16 +69,20 @@ func mergeClutchSize(inputs []*inference.IntRange) (*inference.IntRange, bool) {
 		if maxMax < input.Max {
 			maxMax = input.Max
 		}
+		minTotal += input.Min
+		maxTotal += input.Max
 	}
 	highConfidence := true
 	if maxMin > minMax || minMin < 0 || maxMax > 33 /* Maximum avian clutch size is 33 */ {
 		highConfidence = false
 	}
+	avgMin := int(math.Floor(float64(minTotal) / float64(len(inputs))))
+	avgMax := int(math.Ceil(float64(maxTotal) / float64(len(inputs))))
 	result := &inference.IntRange{
-		Min: minMin,
-		Max: maxMax,
+		Min: avgMin,
+		Max: avgMax,
 		Source: inference.CombineSources(
-			"took outer ranges of all inputs",
+			"took outer-mean'ed ranges of inputs",
 			fmt.Sprintf("%d - %d", minMin, maxMax),
 			inference.AsSourceables(inputs)...,
 		),

@@ -2,10 +2,12 @@ package bird_data_guessing
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/gbdubs/amass"
 	"github.com/gbdubs/attributions"
+	"github.com/gbdubs/sitemaps"
 )
 
 type audubonResponse struct {
@@ -17,15 +19,38 @@ const (
 	maxAudubonConcurrentRequests = 2
 )
 
+var audubonSiteMap *sitemaps.Sitemap = nil
+
+func audubonSitemap() *sitemaps.Sitemap {
+	if audubonSiteMap == nil {
+		s, err := sitemaps.GetPagedSitemapFromURL("https://www.audubon.org/sitemap.xml")
+		if err != nil {
+			panic(err)
+		}
+		audubonSiteMap = s
+	}
+	return audubonSiteMap
+}
+
 func createAudubonRequests(birdName BirdName) []*amass.GetRequest {
 	if isMissing(audubonSite, birdName) {
 		return []*amass.GetRequest{}
 	}
 	nameParam := strings.ReplaceAll(strings.ReplaceAll(birdName.EnglishName, " ", "-"), "'", "")
+	// For whatever reason, audubon's sitemap references .ngo links, but these 400 when you
+	// actually request them. However, the same URL pattern DOES work when you use the .org TLD
+	ngoTargetURL := "https://audubon.ngo/field-guide/bird/" + nameParam
+	ngoURL, levDist := audubonSitemap().BestFuzzyMatch(ngoTargetURL)
+	if levDist > 3 {
+		recordMissing(rspbSite, birdName)
+		return []*amass.GetRequest{}
+	}
+	requestKey := regexp.MustCompile("audubon.ngo/field-guide/bird/([^/]+)").FindStringSubmatch(ngoURL)[1]
+	actualURL := "https://audubon.org/field-guide/bird/" + requestKey
 	req := &amass.GetRequest{
 		Site:                      audubonSite,
-		RequestKey:                nameParam,
-		URL:                       "https://audubon.org/field-guide/bird/" + nameParam,
+		RequestKey:                requestKey,
+		URL:                       actualURL,
 		SiteMaxConcurrentRequests: maxAudubonConcurrentRequests,
 		Attribution: attributions.Attribution{
 			Author:              "National Audubon Society, Inc.",
@@ -33,6 +58,7 @@ func createAudubonRequests(birdName BirdName) []*amass.GetRequest {
 			License:             "All rights reserved",
 			LicenseUrl:          "https://www.audubon.org/terms-use",
 			ScrapingMethodology: "github.com/gbdubs/bird_data_guessing/audubon",
+			CreatedAt:           audubonSitemap().LastUpdated[ngoURL],
 		},
 	}
 	req.SetRoundTripData(birdName)
