@@ -17,7 +17,7 @@ type audubonResponse struct {
 
 const (
 	audubonSite                  = "audubon"
-	maxAudubonConcurrentRequests = 2
+	maxAudubonConcurrentRequests = 3
 )
 
 var audubonSiteMap *sitemaps.Sitemap = nil

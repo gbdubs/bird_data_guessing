@@ -23,7 +23,7 @@ const (
 	allAboutBirdsIdSuffix              = "id"
 	allAboutBirdsLifeHistorySuffix     = "lifehistory"
 	allAboutBirdsOverviewSuffix        = "overview"
-	allAboutBirdsMaxConcurrentRequests = 2
+	allAboutBirdsMaxConcurrentRequests = 3
 )
 
 var allAboutBirdsSitemap *sitemaps.Sitemap = nil

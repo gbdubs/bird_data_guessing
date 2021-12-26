@@ -5,16 +5,26 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/gbdubs/bird_data_guessing"
+	"github.com/gbdubs/bird_region_rosters"
+	"github.com/gbdubs/verbose"
 )
 
 func main() {
-	input := bird_data_guessing.Input{
-		LatinName:   "Branta hutchinsii",
-		EnglishName: "Western tanager",
+	brri := bird_region_rosters.Input{
+		RegionCodes: []string{"USco"},
+		Verbose:     verbose.New(),
 	}
-	output, err := input.Execute()
+	brro, err := brri.Execute()
 	if err != nil {
 		log.Fatal(err)
 	}
-	spew.Dump(output)
+
+	bdgi := bird_data_guessing.Input{
+		Names: brro.Entries,
+	}
+	bdgo, err := bdgi.Execute()
+	if err != nil {
+		log.Fatal(err)
+	}
+	spew.Dump(bdgo)
 }

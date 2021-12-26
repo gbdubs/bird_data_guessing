@@ -21,7 +21,7 @@ type wikipediaResponse struct {
 
 const (
 	wikipediaSite                  = "wikipedia"
-	maxWikipediaConcurrentRequests = 2
+	maxWikipediaConcurrentRequests = 4
 )
 
 func createWikipediaRequests(name bird.BirdName) []*amass.GetRequest {

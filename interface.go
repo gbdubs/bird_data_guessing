@@ -3,10 +3,12 @@ package bird_data_guessing
 import (
 	"github.com/gbdubs/bird"
 	"github.com/gbdubs/inference"
+	"github.com/gbdubs/verbose"
 )
 
 type Input struct {
 	Names []bird.BirdName
+	verbose.Verbose
 }
 
 type Output struct {
