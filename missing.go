@@ -8,20 +8,22 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/gbdubs/bird"
 )
 
 var missingFilePattern = "/memo/missing/%s.txt"
 var missingLock = sync.RWMutex{}
 var missingContents = make(map[string]string)
 
-func isMissing(site string, name BirdName) bool {
+func isMissing(site string, name bird.BirdName) bool {
 	missingLock.RLock()
 	defer missingLock.RUnlock()
 	doRead(site)
 	return strings.Contains(missingContents[site], birdRow(name))
 }
 
-func recordMissing(site string, name BirdName) {
+func recordMissing(site string, name bird.BirdName) {
 	if isMissing(site, name) {
 		return
 	}
@@ -30,11 +32,11 @@ func recordMissing(site string, name BirdName) {
 	missingLock.RUnlock()
 }
 
-func birdRow(name BirdName) string {
-	return fmt.Sprintf("%s - %s", name.EnglishName, name.LatinName)
+func birdRow(name bird.BirdName) string {
+	return fmt.Sprintf("%s - %s", name.English, name.Latin)
 }
 
-func doWrite(site string, name BirdName) {
+func doWrite(site string, name bird.BirdName) {
 	fp := fmt.Sprintf(missingFilePattern, site)
 	s := fmt.Sprintf("%s\n%s", missingContents[site], birdRow(name))
 	missingContents[site] = s

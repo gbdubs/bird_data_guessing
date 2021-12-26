@@ -6,6 +6,7 @@ import (
 
 	"github.com/gbdubs/amass"
 	"github.com/gbdubs/attributions"
+	"github.com/gbdubs/bird"
 )
 
 type whatBirdResponse struct {
@@ -22,8 +23,8 @@ const (
 	whatBirdMaxConcurrentRequests = 2
 )
 
-func createWhatBirdRequests(birdName BirdName) []*amass.GetRequest {
-	nameParam := strings.ToLower(strings.ReplaceAll(birdName.EnglishName, " ", "_"))
+func createWhatBirdRequests(birdName bird.BirdName) []*amass.GetRequest {
+	nameParam := strings.ToLower(strings.ReplaceAll(birdName.English, " ", "_"))
 	whatBirdId := whatBirdIdMap[nameParam]
 	if whatBirdId == 0 {
 		nameParam = strings.ReplaceAll(nameParam, "'", "")
@@ -79,9 +80,9 @@ func reconstructWhatBirdsResponsesKeyedByLatinName(responses []*amass.GetRespons
 		} else {
 			panic(fmt.Errorf("Unrecongnized response request key %s for what bird.", response.RequestKey))
 		}
-		birdName := &BirdName{}
+		birdName := &bird.BirdName{}
 		response.GetRoundTripData(birdName)
-		latinName := birdName.LatinName
+		latinName := birdName.Latin
 		latinNames[latinName] = true
 		m[page][latinName] = response
 	}
@@ -98,7 +99,7 @@ func reconstructWhatBirdsResponsesKeyedByLatinName(responses []*amass.GetRespons
 
 func whatBirdRequestForTesting(englishName string) *whatBirdResponse {
 	latin := "not really a latin name"
-	bn := BirdName{EnglishName: englishName, LatinName: latin}
+	bn := bird.BirdName{English: englishName, Latin: latin}
 	rs := createWhatBirdRequests(bn)
 	if len(rs) != 3 {
 		panic(fmt.Errorf("Expected 3 what bird request, was %d, for key %s.", len(rs), englishName))

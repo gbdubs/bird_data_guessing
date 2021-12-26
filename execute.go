@@ -9,7 +9,7 @@ func (i *Input) Execute() (*Output, error) {
 	oo := &Output{}
 
 	requests := make([]*amass.GetRequest, 0)
-	for _, bird := range i.Birds {
+	for _, bird := range i.Names {
 		// The compiler doesn't allow two variadic args of the same type
 		requests = append(requests, createWikipediaRequests(bird)...)
 		requests = append(requests, createAudubonRequests(bird)...)
@@ -34,8 +34,8 @@ func (i *Input) Execute() (*Output, error) {
 	latinToWhatBird := reconstructWhatBirdsResponsesKeyedByLatinName(responses)
 	latinToRspb := reconstructRSPBResponsesKeyedByLatinName(responses)
 
-	for _, bird := range i.Birds {
-		latin := bird.LatinName
+	for _, bird := range i.Names {
+		latin := bird.Latin
 		allSources := make([]*singleSourceData, 0)
 		if w, ok := latinToWikipedia[latin]; ok {
 			allSources = append(allSources, w.propertySearchers().getData(bird))

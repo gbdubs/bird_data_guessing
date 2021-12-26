@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/gbdubs/bird"
 	"github.com/gbdubs/bird_data_guessing"
 	"github.com/urfave/cli/v2"
 )
@@ -40,10 +41,10 @@ func main() {
 			}
 			v := c.Bool("verbose")
 			input := &bird_data_guessing.Input{
-				Birds: []bird_data_guessing.BirdName{
-					bird_data_guessing.BirdName{
-						LatinName:   ln,
-						EnglishName: en,
+				Names: []bird.BirdName{
+					bird.BirdName{
+						Latin:   ln,
+						English: en,
 					},
 				},
 			}

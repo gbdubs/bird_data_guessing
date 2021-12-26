@@ -10,6 +10,7 @@ import (
 
 	"github.com/gbdubs/amass"
 	"github.com/gbdubs/attributions"
+	"github.com/gbdubs/bird"
 )
 
 type wikipediaResponse struct {
@@ -23,7 +24,7 @@ const (
 	maxWikipediaConcurrentRequests = 2
 )
 
-func createWikipediaRequests(name BirdName) []*amass.GetRequest {
+func createWikipediaRequests(name bird.BirdName) []*amass.GetRequest {
 	result := make([]*amass.GetRequest, 0)
 	if isMissing(wikipediaSite, name) {
 		return result
@@ -33,11 +34,12 @@ func createWikipediaRequests(name BirdName) []*amass.GetRequest {
 	v.Add("prop", "cirrusdoc|info")
 	v.Add("format", "xml")
 	v.Add("inprop", "url")
-	v.Add("titles", name.LatinName)
+	v.Add("redirects", "1")
+	v.Add("titles", name.Latin)
 	url := "https://en.wikipedia.org/w/api.php?" + v.Encode()
 	r := &amass.GetRequest{
 		Site:                      wikipediaSite,
-		RequestKey:                name.LatinName,
+		RequestKey:                name.Latin,
 		URL:                       url,
 		SiteMaxConcurrentRequests: maxWikipediaConcurrentRequests,
 		Attribution: attributions.Attribution{
@@ -59,7 +61,7 @@ func reconstructWikipediaResponsesKeyedByLatinName(responses []*amass.GetRespons
 		if response.Site != wikipediaSite {
 			continue
 		}
-		birdName := &BirdName{}
+		birdName := &bird.BirdName{}
 		response.GetRoundTripData(birdName)
 		wr := &wikipediaResponse{
 			Response: *response,
@@ -69,13 +71,13 @@ func reconstructWikipediaResponsesKeyedByLatinName(responses []*amass.GetRespons
 			continue
 		}
 		wr.tweakResponse()
-		result[birdName.LatinName] = wr
+		result[birdName.Latin] = wr
 	}
 	return result
 }
 
 func wikipediaRequestForTesting(latinName string) *wikipediaResponse {
-	bn := BirdName{LatinName: latinName}
+	bn := bird.BirdName{Latin: latinName}
 	rs := createWikipediaRequests(bn)
 	if len(rs) != 1 {
 		panic(fmt.Errorf("Expected 1 wikipedia request, was %d, for key %s.", len(rs), latinName))
@@ -85,7 +87,11 @@ func wikipediaRequestForTesting(latinName string) *wikipediaResponse {
 		panic(fmt.Errorf("Get request failed for %s: %v", latinName, err))
 	}
 	m := reconstructWikipediaResponsesKeyedByLatinName([]*amass.GetResponse{resp})
-	return m[latinName]
+	result, ok := m[latinName]
+	if !ok {
+		panic(fmt.Errorf("Expected key %s in map, but map was %+v.", latinName, m))
+	}
+	return result
 }
 
 func (r *wikipediaResponse) isWikipediaResponseMissing() bool {

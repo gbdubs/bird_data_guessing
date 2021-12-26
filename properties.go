@@ -1,5 +1,7 @@
 package bird_data_guessing
 
+import "github.com/gbdubs/bird"
+
 // Tells the searching algorithms where to look for different pieces of data.
 // This CAN be a single searcher across all categories, but for most sites
 // we can do some basic HTML parsing to decide which section is most likely
@@ -16,7 +18,7 @@ type propertySearchers struct {
 	flocking   searcher
 }
 
-func (s *propertySearchers) getData(birdName BirdName) *singleSourceData {
+func (s *propertySearchers) getData(birdName bird.BirdName) *singleSourceData {
 	d := singleSourceData{}
 
 	d.Name = birdName
@@ -24,7 +26,7 @@ func (s *propertySearchers) getData(birdName BirdName) *singleSourceData {
 	d.Wingspan = s.wingspan.Wingspan()
 	d.ClutchSize = s.clutchSize.ClutchSize()
 	d.EggColor = s.eggColor.EggColor()
-	d.FunFact = s.funFact.FunFact(birdName.EnglishName)
+	d.FunFact = s.funFact.FunFact(birdName.English)
 
 	d.WormScore = s.food.CountMatches(wormKeywords...)
 	d.WheatScore = s.food.CountMatches(wheatKeywords...)

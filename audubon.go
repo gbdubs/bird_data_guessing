@@ -7,6 +7,7 @@ import (
 
 	"github.com/gbdubs/amass"
 	"github.com/gbdubs/attributions"
+	"github.com/gbdubs/bird"
 	"github.com/gbdubs/sitemaps"
 )
 
@@ -32,11 +33,11 @@ func audubonSitemap() *sitemaps.Sitemap {
 	return audubonSiteMap
 }
 
-func createAudubonRequests(birdName BirdName) []*amass.GetRequest {
+func createAudubonRequests(birdName bird.BirdName) []*amass.GetRequest {
 	if isMissing(audubonSite, birdName) {
 		return []*amass.GetRequest{}
 	}
-	nameParam := strings.ReplaceAll(strings.ReplaceAll(birdName.EnglishName, " ", "-"), "'", "")
+	nameParam := strings.ReplaceAll(strings.ReplaceAll(birdName.English, " ", "-"), "'", "")
 	// For whatever reason, audubon's sitemap references .ngo links, but these 400 when you
 	// actually request them. However, the same URL pattern DOES work when you use the .org TLD
 	ngoTargetURL := "https://audubon.ngo/field-guide/bird/" + nameParam
@@ -71,13 +72,13 @@ func reconstructAudubonResponsesKeyedByLatinName(responses []*amass.GetResponse)
 		if response.Site != audubonSite {
 			continue
 		}
-		birdName := &BirdName{}
+		birdName := &bird.BirdName{}
 		response.GetRoundTripData(birdName)
 		if isAudubonResponseMissing(response) {
 			recordMissing(audubonSite, *birdName)
 			continue
 		}
-		result[birdName.LatinName] = &audubonResponse{
+		result[birdName.Latin] = &audubonResponse{
 			Response: *response,
 		}
 	}
@@ -86,7 +87,7 @@ func reconstructAudubonResponsesKeyedByLatinName(responses []*amass.GetResponse)
 
 func audubonRequestForTesting(englishName string) *audubonResponse {
 	latin := "any old string"
-	bn := BirdName{LatinName: latin, EnglishName: englishName}
+	bn := bird.BirdName{Latin: latin, English: englishName}
 	rs := createAudubonRequests(bn)
 	if len(rs) != 1 {
 		panic(fmt.Errorf("Expected 1 audubon request, was %d, for key %s.", len(rs), englishName))

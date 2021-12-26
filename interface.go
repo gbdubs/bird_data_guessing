@@ -1,16 +1,12 @@
 package bird_data_guessing
 
 import (
+	"github.com/gbdubs/bird"
 	"github.com/gbdubs/inference"
 )
 
 type Input struct {
-	Birds []BirdName
-}
-
-type BirdName struct {
-	EnglishName string
-	LatinName   string
+	Names []bird.BirdName
 }
 
 type Output struct {
@@ -18,7 +14,7 @@ type Output struct {
 }
 
 type BirdData struct {
-	Name BirdName
+	Name bird.BirdName
 	// Precice Properties
 	Wingspan   *inference.Float64Range
 	ClutchSize *inference.IntRange
@@ -47,7 +43,7 @@ type BirdData struct {
 }
 
 type singleSourceData struct {
-	Name BirdName
+	Name bird.BirdName
 	// Precice Properties
 	Wingspan   []*inference.Float64Range
 	ClutchSize *inference.IntRange

@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/gbdubs/bird"
 	"github.com/gbdubs/sitemaps"
 
 	"github.com/gbdubs/amass"
@@ -38,9 +39,9 @@ func aabSitemap() *sitemaps.Sitemap {
 	return allAboutBirdsSitemap
 }
 
-func createAllAboutBirdsRequests(name BirdName) []*amass.GetRequest {
+func createAllAboutBirdsRequests(name bird.BirdName) []*amass.GetRequest {
 	sitemap := aabSitemap()
-	nameParam := strings.ReplaceAll(name.EnglishName, " ", "_")
+	nameParam := strings.ReplaceAll(name.English, " ", "_")
 	requests := make([]*amass.GetRequest, 0)
 
 	for _, page := range []string{allAboutBirdsOverviewSuffix, allAboutBirdsIdSuffix, allAboutBirdsLifeHistorySuffix} {
@@ -90,9 +91,9 @@ func reconstructAllAboutBirdsResponsesKeyedByLatinName(responses []*amass.GetRes
 		} else {
 			panic(fmt.Errorf("Unrecongnized response request key %s for all about birds.", response.RequestKey))
 		}
-		birdName := &BirdName{}
+		birdName := &bird.BirdName{}
 		response.GetRoundTripData(birdName)
-		latinName := birdName.LatinName
+		latinName := birdName.Latin
 		latinNames[latinName] = true
 		m[page][latinName] = response
 	}
@@ -109,7 +110,7 @@ func reconstructAllAboutBirdsResponsesKeyedByLatinName(responses []*amass.GetRes
 
 func allAboutBirdsRequestForTesting(englishName string) *allAboutBirdsResponse {
 	latin := "not really a latin name"
-	bn := BirdName{EnglishName: englishName, LatinName: latin}
+	bn := bird.BirdName{English: englishName, Latin: latin}
 	rs := createAllAboutBirdsRequests(bn)
 	if len(rs) != 3 {
 		panic(fmt.Errorf("Expected 3 all about birds requests, was %d, for key %s.", len(rs), englishName))

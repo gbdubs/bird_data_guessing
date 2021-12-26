@@ -7,6 +7,7 @@ import (
 
 	"github.com/gbdubs/amass"
 	"github.com/gbdubs/attributions"
+	"github.com/gbdubs/bird"
 	"github.com/gbdubs/sitemaps"
 )
 
@@ -32,12 +33,12 @@ func rspbSitemap() *sitemaps.Sitemap {
 	return rspbSiteMap
 }
 
-func createRSPBRequests(birdName BirdName) []*amass.GetRequest {
+func createRSPBRequests(birdName bird.BirdName) []*amass.GetRequest {
 	sitemap := rspbSitemap()
 	if isMissing(rspbSite, birdName) {
 		return []*amass.GetRequest{}
 	}
-	nameParam := strings.ReplaceAll(strings.ReplaceAll(birdName.EnglishName, " ", "-"), "'", "")
+	nameParam := strings.ReplaceAll(strings.ReplaceAll(birdName.English, " ", "-"), "'", "")
 	url := "https://rspb.org.uk/birds-and-wildlife/wildlife-guides/bird-a-z/" + nameParam
 	actualUrl, levDist := sitemap.BestFuzzyMatch(url)
 	if levDist > 3 {
@@ -68,13 +69,13 @@ func reconstructRSPBResponsesKeyedByLatinName(responses []*amass.GetResponse) ma
 		if response.Site != rspbSite {
 			continue
 		}
-		birdName := &BirdName{}
+		birdName := &bird.BirdName{}
 		response.GetRoundTripData(birdName)
 		if isRSPBResponseMissing(response) {
 			recordMissing(rspbSite, *birdName)
 			continue
 		}
-		result[birdName.LatinName] = &rspbResponse{
+		result[birdName.Latin] = &rspbResponse{
 			Response: *response,
 		}
 	}
@@ -83,7 +84,7 @@ func reconstructRSPBResponsesKeyedByLatinName(responses []*amass.GetResponse) ma
 
 func rspbRequestForTesting(englishName string) *rspbResponse {
 	latin := "any old string"
-	bn := BirdName{LatinName: latin, EnglishName: englishName}
+	bn := bird.BirdName{Latin: latin, English: englishName}
 	rs := createRSPBRequests(bn)
 	if len(rs) != 1 {
 		panic(fmt.Errorf("Expected 1 rspb request, was %d, for key %s.", len(rs), englishName))
