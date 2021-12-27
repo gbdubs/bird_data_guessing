@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gbdubs/bird_data_guessing"
 	"github.com/gbdubs/bird_region_rosters"
 	"github.com/gbdubs/verbose"
@@ -20,11 +19,11 @@ func main() {
 	}
 
 	bdgi := bird_data_guessing.Input{
-		Names: brro.Entries,
+		Names:   brro.Entries,
+		Verbose: verbose.New(),
 	}
-	bdgo, err := bdgi.Execute()
+	_, err = bdgi.Execute()
 	if err != nil {
 		log.Fatal(err)
 	}
-	spew.Dump(bdgo)
 }

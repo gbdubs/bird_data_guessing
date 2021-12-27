@@ -18,18 +18,25 @@ var missingContents = make(map[string]string)
 
 func isMissing(site string, name bird.BirdName) bool {
 	missingLock.RLock()
-	defer missingLock.RUnlock()
-	doRead(site)
-	return strings.Contains(missingContents[site], birdRow(name))
+	if _, ok := missingContents[site]; !ok {
+		missingLock.RUnlock()
+		missingLock.Lock()
+		doRead(site)
+		missingLock.Unlock()
+		missingLock.RLock()
+	}
+	result := strings.Contains(missingContents[site], birdRow(name))
+	missingLock.RUnlock()
+	return result
 }
 
 func recordMissing(site string, name bird.BirdName) {
 	if isMissing(site, name) {
 		return
 	}
-	missingLock.RLock()
+	missingLock.Lock()
 	doWrite(site, name)
-	missingLock.RUnlock()
+	missingLock.Unlock()
 }
 
 func birdRow(name bird.BirdName) string {

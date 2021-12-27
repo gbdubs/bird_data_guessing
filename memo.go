@@ -2,6 +2,7 @@ package bird_data_guessing
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,10 +15,11 @@ import (
 func readMemoized(name bird.BirdName) (bool, BirdData, error) {
 	mp := memoPath(name)
 	asBytes, err := ioutil.ReadFile(mp)
-	if err == io.EOF {
+	if errors.Is(err, os.ErrNotExist) {
 		return false, BirdData{}, nil
-	}
-	if err != nil {
+	} else if err == io.EOF {
+		return true, BirdData{}, nil
+	} else if err != nil {
 		return false, BirdData{}, fmt.Errorf("While looking up memoized file at %s: %v", mp, err)
 	}
 	r := &BirdData{}

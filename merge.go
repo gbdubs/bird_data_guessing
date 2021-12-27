@@ -33,6 +33,10 @@ func mergeWingspan(inputs []*inference.Float64Range) (*inference.Float64Range, b
 	}
 	highConfidence := true
 	if maxMin*.8 > minMax*1.2 || minMin < 0 || maxMax > 380 /* Wandering Albatros 375cm */ {
+		fmt.Printf("\n\nLOW CONFIDENCE WINGSPAN [%f, %f] to [%f, %f]\n", minMin, maxMin, minMax, maxMax)
+		for _, input := range inputs {
+			fmt.Printf("%f to %f source %#v \n", input.Min, input.Max, input.Source)
+		}
 		highConfidence = false
 	}
 	min := minTotal / float64(len(inputs))
@@ -56,7 +60,11 @@ func mergeClutchSize(inputs []*inference.IntRange) (*inference.IntRange, bool) {
 	maxMax := math.MinInt
 	minTotal := 0
 	maxTotal := 0
+	count := 0
 	for _, input := range inputs {
+		if input.Min == 0 && input.Max == 0 {
+			continue
+		}
 		if minMin > input.Min {
 			minMin = input.Min
 		}
@@ -71,18 +79,20 @@ func mergeClutchSize(inputs []*inference.IntRange) (*inference.IntRange, bool) {
 		}
 		minTotal += input.Min
 		maxTotal += input.Max
+		count++
 	}
 	highConfidence := true
 	if maxMin > minMax || minMin < 0 || maxMax > 33 /* Maximum avian clutch size is 33 */ {
+		fmt.Printf("LOW CONFIDENCE CLUTCH SIZE [%d, %d] to [%d, %d]\n", minMin, maxMin, minMax, maxMax)
 		highConfidence = false
 	}
-	avgMin := int(math.Floor(float64(minTotal) / float64(len(inputs))))
-	avgMax := int(math.Ceil(float64(maxTotal) / float64(len(inputs))))
+	avgMin := int(math.Floor(float64(minTotal) / float64(count)))
+	avgMax := int(math.Ceil(float64(maxTotal) / float64(count)))
 	result := &inference.IntRange{
 		Min: avgMin,
 		Max: avgMax,
 		Source: inference.CombineSources(
-			"took outer-mean'ed ranges of inputs",
+			"took mean'ed min/max of input ranges",
 			fmt.Sprintf("%d - %d", minMin, maxMax),
 			inference.AsSourceables(inputs)...,
 		),
@@ -108,7 +118,7 @@ func mergeScores(inputs []*inference.Int) *inference.Float64 {
 	return inference.ZeroTolerantGeomMeanInt(inputs...)
 }
 
-func mergeSources(inputs []*singleSourceData) (data *BirdData, highConfidence bool) {
+func (input *Input) mergeSources(inputs []*singleSourceData) (data *BirdData, highConfidence bool) {
 	if len(inputs) == 0 {
 		panic(fmt.Errorf("expected one or more inputs to merge, but had none."))
 	}
@@ -168,11 +178,13 @@ func mergeSources(inputs []*singleSourceData) (data *BirdData, highConfidence bo
 	if ws, hc := mergeWingspan(wingspans); hc {
 		data.Wingspan = ws
 	} else {
+		input.VLog(" - LC - Wingspan - ")
 		highConfidence = false
 	}
 	if cs, hc := mergeClutchSize(clutchSizes); hc {
 		data.ClutchSize = cs
 	} else {
+		input.VLog(" - LC - ClutchSize -")
 		highConfidence = false
 	}
 	if ec, hc := mergeEggColor(eggColors); hc {
@@ -183,6 +195,7 @@ func mergeSources(inputs []*singleSourceData) (data *BirdData, highConfidence bo
 	if ff, hc := mergeFunFact(funFacts); hc {
 		data.FunFact = ff
 	} else {
+		input.VLog(" - LC - Fun Fact -")
 		highConfidence = false
 	}
 	/*

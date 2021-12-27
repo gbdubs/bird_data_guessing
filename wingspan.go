@@ -21,8 +21,6 @@ func (s *searcher) Wingspan() []*inference.Float64Range {
 	wingspan := "(wing.?span)"
 	wingspanPhrases := []string{femaleWingspan, maleWingspan, wingspan}
 
-	otherMeasurementPhrases := []string{"(wing)", "(length|long|measures)"}
-
 	units := []string{"(cm|centimeter|centimetre)", "(millimeter|millimetre|mm)", "(meter|m)", "(inches|in)"}
 
 	findAllMatches := func(keywords []string) []*inference.Float64Range {
@@ -78,9 +76,5 @@ func (s *searcher) Wingspan() []*inference.Float64Range {
 		}
 		return results
 	}
-	r := append(findAllMatches(avgPhrases), findAllMatches(wingspanPhrases)...)
-	if len(r) > 0 {
-		return r
-	}
-	return findAllMatches(otherMeasurementPhrases)
+	return append(findAllMatches(avgPhrases), findAllMatches(wingspanPhrases)...)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/gbdubs/amass"
 	"github.com/gbdubs/attributions"
@@ -21,14 +22,19 @@ const (
 )
 
 var audubonSiteMap *sitemaps.Sitemap = nil
+var audubonSiteMapLock = sync.RWMutex{}
 
 func audubonSitemap() *sitemaps.Sitemap {
 	if audubonSiteMap == nil {
-		s, err := sitemaps.GetPagedSitemapFromURL("https://www.audubon.org/sitemap.xml")
-		if err != nil {
-			panic(err)
+		audubonSiteMapLock.Lock()
+		if audubonSiteMap == nil {
+			s, err := sitemaps.GetPagedSitemapFromURL("https://www.audubon.org/sitemap.xml")
+			if err != nil {
+				panic(err)
+			}
+			audubonSiteMap = s
 		}
-		audubonSiteMap = s
+		audubonSiteMapLock.Unlock()
 	}
 	return audubonSiteMap
 }

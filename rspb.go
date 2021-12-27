@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/gbdubs/amass"
 	"github.com/gbdubs/attributions"
@@ -21,14 +22,19 @@ const (
 )
 
 var rspbSiteMap *sitemaps.Sitemap = nil
+var rspbSiteMapLock = sync.RWMutex{}
 
 func rspbSitemap() *sitemaps.Sitemap {
 	if rspbSiteMap == nil {
-		s, err := sitemaps.GetSitemapFromURL("https://www.rspb.org.uk/birds-and-wildlife/sitemap.xml")
-		if err != nil {
-			panic(err)
+		rspbSiteMapLock.Lock()
+		if rspbSiteMap == nil {
+			s, err := sitemaps.GetSitemapFromURL("https://www.rspb.org.uk/birds-and-wildlife/sitemap.xml")
+			if err != nil {
+				panic(err)
+			}
+			rspbSiteMap = s
 		}
-		rspbSiteMap = s
+		rspbSiteMapLock.Unlock()
 	}
 	return rspbSiteMap
 }

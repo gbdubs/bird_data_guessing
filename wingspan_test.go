@@ -12,7 +12,6 @@ func TestWingspan_Wikipedia(t *testing.T) {
 	}
 	testSliceRangeFloat64Cases(t, wikipediaWingspan,
 		unorderedSliceRangeFloat64Case("Aythya valisineria", 79.0, 89.0),
-		unorderedSliceRangeFloat64Case("Cardinalis sinuatus", 21.082, 21.082),
 		unorderedSliceRangeFloat64Case("Cistothorus palustris", 14.986, 14.986),
 		unorderedSliceRangeFloat64Case("Passer domesticus", 19.0, 25),
 		unorderedSliceRangeFloat64Case("Pooecetes gramineus", 23.876, 23.876),

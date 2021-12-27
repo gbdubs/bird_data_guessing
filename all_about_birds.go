@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/gbdubs/bird"
 	"github.com/gbdubs/sitemaps"
@@ -27,14 +28,19 @@ const (
 )
 
 var allAboutBirdsSitemap *sitemaps.Sitemap = nil
+var allAboutBirdsSitemapLock = sync.RWMutex{}
 
 func aabSitemap() *sitemaps.Sitemap {
 	if allAboutBirdsSitemap == nil {
-		s, err := sitemaps.GetSitemapFromURL("https://www.allaboutbirds.org/guide/sitemap.xml")
-		if err != nil {
-			panic(err)
+		allAboutBirdsSitemapLock.Lock()
+		if allAboutBirdsSitemap == nil {
+			s, err := sitemaps.GetSitemapFromURL("https://www.allaboutbirds.org/guide/sitemap.xml")
+			if err != nil {
+				panic(err)
+			}
+			allAboutBirdsSitemap = s
 		}
-		allAboutBirdsSitemap = s
+		allAboutBirdsSitemapLock.Unlock()
 	}
 	return allAboutBirdsSitemap
 }
