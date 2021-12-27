@@ -12,14 +12,15 @@ func TestWingspan_Wikipedia(t *testing.T) {
 	}
 	testSliceRangeFloat64Cases(t, wikipediaWingspan,
 		unorderedSliceRangeFloat64Case("Aythya valisineria", 79.0, 89.0),
-		unorderedSliceRangeFloat64Case("Cistothorus palustris", 14.986, 14.986),
+		unorderedSliceRangeFloat64Case("Cistothorus palustris", 15, 15),
 		unorderedSliceRangeFloat64Case("Passer domesticus", 19.0, 25),
-		unorderedSliceRangeFloat64Case("Pooecetes gramineus", 23.876, 23.876),
+		unorderedSliceRangeFloat64Case("Pooecetes gramineus", 24, 24),
 		unorderedSliceRangeFloat64Case("Loxia leucoptera", 26, 29),
-		unorderedSliceRangeFloat64Case("Columba livia", 60.96, 71.12),
-		unorderedSliceRangeFloat64Case("Riparia riparia", 22.86, 33.02),
+		unorderedSliceRangeFloat64Case("Columba livia", 62, 72),
+		unorderedSliceRangeFloat64Case("Riparia riparia", 25, 33),
 		unorderedSliceRangeFloat64Case("Spinus pinus", 18, 22),
 		unorderedSliceRangeFloat64Case("Junco hyemalis", 18, 25),
+		unorderedSliceRangeFloat64Case("Ictinia mississippiensis", 91, 91, 91, 91),
 		unorderedSliceRangeFloat64Case("Accipiter striatus", 58, 68, 42, 58))
 }
 
@@ -42,8 +43,8 @@ func TestWingspan_AllAboutBirds(t *testing.T) {
 	}
 	testSliceRangeFloat64Cases(t, whatBirdWingspan,
 		unorderedSliceRangeFloat64Case("Sprague's Pipit"),
-		unorderedSliceRangeFloat64Case("Bald eagle", 203.962, 203.962),
-		unorderedSliceRangeFloat64Case("Brandt's cormorant", 107.95, 107.95),
+		unorderedSliceRangeFloat64Case("Bald eagle", 204, 204),
+		unorderedSliceRangeFloat64Case("Brandt's cormorant", 108, 108),
 	)
 }
 

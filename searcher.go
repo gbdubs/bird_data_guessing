@@ -150,7 +150,7 @@ func caseInsensitiveRegex(s string) *regexp.Regexp {
 	}
 	r, err := regexp.Compile("(?i)" + s)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("While compiling regex %s: %v", s, err))
 	}
 	regexesLock.Lock()
 	regexes[s] = r

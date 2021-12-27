@@ -35,7 +35,7 @@ func mergeWingspan(inputs []*inference.Float64Range) (*inference.Float64Range, b
 	if maxMin*.8 > minMax*1.2 || minMin < 0 || maxMax > 380 /* Wandering Albatros 375cm */ {
 		fmt.Printf("\n\nLOW CONFIDENCE WINGSPAN [%f, %f] to [%f, %f]\n", minMin, maxMin, minMax, maxMax)
 		for _, input := range inputs {
-			fmt.Printf("%f to %f source %#v \n", input.Min, input.Max, input.Source)
+			fmt.Printf("%f to %f source %#v \n", input.Min, input.Max, input.Source.Origin.Attribution.OriginUrl)
 		}
 		highConfidence = false
 	}
