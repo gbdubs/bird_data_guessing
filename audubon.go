@@ -48,7 +48,7 @@ func createAudubonRequests(birdName bird.BirdName) []*amass.GetRequest {
 	// actually request them. However, the same URL pattern DOES work when you use the .org TLD
 	ngoTargetURL := "https://audubon.ngo/field-guide/bird/" + nameParam
 	ngoURL, levDist := audubonSitemap().BestFuzzyMatch(ngoTargetURL)
-	if levDist > 3 {
+	if levDist > 2 {
 		recordMissing(rspbSite, birdName)
 		return []*amass.GetRequest{}
 	}

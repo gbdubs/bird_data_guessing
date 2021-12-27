@@ -53,7 +53,7 @@ func createAllAboutBirdsRequests(name bird.BirdName) []*amass.GetRequest {
 	for _, page := range []string{allAboutBirdsOverviewSuffix, allAboutBirdsIdSuffix, allAboutBirdsLifeHistorySuffix} {
 		url := fmt.Sprintf("https://allaboutbirds.org/guide/%s/%s", nameParam, page)
 		actualUrl, levDist := sitemap.BestFuzzyMatch(url)
-		if levDist > 4 {
+		if levDist > 2 {
 			recordMissing(allAboutBirdsSite, name)
 			continue
 		}

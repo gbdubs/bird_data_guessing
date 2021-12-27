@@ -20,7 +20,11 @@ func TestWingspan_Wikipedia(t *testing.T) {
 		unorderedSliceRangeFloat64Case("Riparia riparia", 25, 33),
 		unorderedSliceRangeFloat64Case("Spinus pinus", 18, 22),
 		unorderedSliceRangeFloat64Case("Junco hyemalis", 18, 25),
-		unorderedSliceRangeFloat64Case("Ictinia mississippiensis", 91, 91, 91, 91),
+		unorderedSliceRangeFloat64Case("Ictinia mississippiensis", 91, 91, 91.44, 91.44),
+		unorderedSliceRangeFloat64Case("Bubulcus ibis", 88, 96),
+		unorderedSliceRangeFloat64Case("Spizella pallida", 19, 19),
+		unorderedSliceRangeFloat64Case("Euphagus cyanocephalus", 39, 39),
+		unorderedSliceRangeFloat64Case("Melanitta americana", 71, 71),
 		unorderedSliceRangeFloat64Case("Accipiter striatus", 58, 68, 42, 58))
 }
 

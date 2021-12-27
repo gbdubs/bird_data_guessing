@@ -47,7 +47,7 @@ func createRSPBRequests(birdName bird.BirdName) []*amass.GetRequest {
 	nameParam := strings.ReplaceAll(strings.ReplaceAll(birdName.English, " ", "-"), "'", "")
 	url := "https://rspb.org.uk/birds-and-wildlife/wildlife-guides/bird-a-z/" + nameParam
 	actualUrl, levDist := sitemap.BestFuzzyMatch(url)
-	if levDist > 3 {
+	if levDist > 2 {
 		recordMissing(rspbSite, birdName)
 		return []*amass.GetRequest{}
 	}
@@ -100,7 +100,11 @@ func rspbRequestForTesting(englishName string) *rspbResponse {
 		panic(fmt.Errorf("Get request failed for %s: %v", englishName, err))
 	}
 	m := reconstructRSPBResponsesKeyedByLatinName([]*amass.GetResponse{resp})
-	return m[latin]
+	result, ok := m[latin]
+	if !ok {
+		result = &rspbResponse{}
+	}
+	return result
 }
 
 func isRSPBResponseMissing(r *amass.GetResponse) bool {

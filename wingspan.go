@@ -10,6 +10,7 @@ func (s *searcher) Wingspan() []*inference.Float64Range {
 	number := `(\d+)(\.\d+)?`
 	numberRange := fmt.Sprintf(`((%s) ?(to|-|–) ?(%s))`, number, number)
 	e := `[^.\d]{0,30}`
+	optionallyOtherMeasurementTwenty := fmt.Sprintf(`[^.;,\d]{0,5}(%s|%s)?[^.;,\d]{0,15}`, number, numberRange)
 
 	avgFemaleWingspan := fmt.Sprintf("(female%saverage%swing.?span|wing.?span%sfemale%saverage|average%sfemale%swing.?span)", e, e, e, e, e, e)
 	avgMaleWingspan := fmt.Sprintf("(male%saverage%swing.?span|wing.?span%smale%saverage|average%smale%swing.?span)", e, e, e, e, e, e)
@@ -47,9 +48,9 @@ func (s *searcher) Wingspan() []*inference.Float64Range {
 						pattern := fmt.Sprintf(`[^.\d](%s ?%s)\)?`, rawPattern, unit)
 						m := make(map[string]int)
 						if keywordFirst {
-							m[fmt.Sprintf("%s.{0,30}%s", keyword, pattern)] = 2
+							m[fmt.Sprintf("%s%s%s", keyword, optionallyOtherMeasurementTwenty, pattern)] = 13
 						} else {
-							m[fmt.Sprintf("%s.{0,30}%s", pattern, keyword)] = 1
+							m[fmt.Sprintf("%s%s%s", pattern, optionallyOtherMeasurementTwenty, keyword)] = 1
 						}
 						matches := s.ExtractAllMatches(m)
 						if len(matches) > 0 {
