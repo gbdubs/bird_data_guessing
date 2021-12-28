@@ -8,46 +8,92 @@ import (
 )
 
 func (s *searcher) ClutchSize() *inference.IntRange {
-	nr := `(one|two|three|four|five|six|seven|eight|nine|\d+)(\.\d+)?`
-	rr := fmt.Sprintf("(%s to %s|%s ?- ?%s|%s ?– ?%s)", nr, nr, nr, nr, nr, nr)
-	np := `[^.\d]{0,20}`
-	match := &inference.String{}
-	for _, r := range []string{rr, nr} {
-		m := make(map[string]int)
-		m[fmt.Sprintf("la(id|y)%s%s%segg", np, r, np)] = 2
-		m[fmt.Sprintf("egg%sla(id|y)%s%s", np, np, r)] = 2
-		m[fmt.Sprintf("clutch size%s%s", np, r)] = 1
-		m[fmt.Sprintf("%s%seggs per year", r, np)] = 1
-		m[fmt.Sprintf("clutch%s%s", np, r)] = 1
-		m[fmt.Sprintf("%s%segg%sla(y|id)", r, np, np)] = 1
-		m[fmt.Sprintf("la(id|y)%segg%s%s", np, np, r)] = 2
-		m[fmt.Sprintf("number of eggs%s%s", np, r)] = 1
-		m[fmt.Sprintf(`Eggs\s*(usually|from)?\s*%s`, r)] = 2
-		match = s.ExtractAnyMatch(m)
-		if *match != (inference.String{}) {
-			break
+	number := `(one|two|three|four|five|six|seven|eight|nine|\d+)(\.\d+)?`
+	other := `[^.\d]{0,30}`
+	space := `\s*`
+
+	createPatterns := func(pattern string) map[string]int {
+		return map[string]int{
+			fmt.Sprintf(`(clutch|brood|nest|lay|laid)%s%s%segg`, other, pattern, space): 2,
+			fmt.Sprintf(`clutch%s%s%segg`, other, pattern, other):                       1,
+			fmt.Sprintf(`egg%sla(id|y)%s%s`, other, other, pattern):                     2,
+			fmt.Sprintf(`clutch size%s%s`, other, pattern):                              1,
+			fmt.Sprintf(`%s%seggs per year`, pattern, other):                            1,
+			fmt.Sprintf(`%s%segg%sla(y|id)`, pattern, other, other):                     1,
+			fmt.Sprintf(`la(id|y)%segg%s%s`, other, other, pattern):                     2,
+			fmt.Sprintf(`number of eggs%s%s`, other, pattern):                           1,
+			fmt.Sprintf(`eggs\s*(usually|from)?%s%s`, space, pattern):                   2,
 		}
 	}
-	if *match == (inference.String{}) {
-		return &inference.IntRange{}
+
+	numberRange := fmt.Sprintf("((%s) ?(or|to|and|-|–) ?(%s))", number, number)
+	matches := s.ExtractAllMatches(createPatterns(numberRange))
+	for _, match := range matches {
+		if *match != (inference.String{}) {
+			v := match.Value
+			for e, a := range englishToArabicNumerals {
+				v = caseInsReplace(v, e, a)
+			}
+			twoParts := caseInsensitiveRegex(numberRange).FindStringSubmatch(v)
+			if twoParts == nil {
+				panic(fmt.Errorf("Error in regex format %s - didn't match submatches in %s.", numberRange, v))
+			}
+			min := atoiOrFail(twoParts[2])
+			max := atoiOrFail(twoParts[6])
+			if min > max {
+				min, max = max, min
+			}
+			result := &inference.IntRange{
+				Min:    min,
+				Max:    max,
+				Source: match.Source,
+			}
+			if result.Max > 33 || result.Min <= 0 || (result.Min+1)*3+1 < result.Max {
+				continue
+			}
+			return result
+		}
 	}
-	v := match.Value
-	for e, a := range englishToArabicNumerals {
-		v = caseInsReplace(v, e, a)
+
+	upToRange := fmt.Sprintf("((as many as|up to|as large as|as much as) ?(%s))", number)
+	matches = s.ExtractAllMatches(createPatterns(upToRange))
+	for _, match := range matches {
+		v := match.Value
+		for e, a := range englishToArabicNumerals {
+			v = caseInsReplace(v, e, a)
+		}
+		submatch := caseInsensitiveRegex(upToRange).FindStringSubmatch(v)
+		if submatch == nil {
+			panic(fmt.Errorf("Error in regex format %s - didn't match submatches in %s.", upToRange, v))
+		}
+		result := &inference.IntRange{
+			Min:    -1,
+			Max:    atoiOrFail(submatch[3]),
+			Source: match.Source,
+		}
+		if result.Max > 33 {
+			continue
+		}
+		return result
 	}
-	twoParts := caseInsensitiveRegex("(\\d+) ?(to|-|–) ?(\\d+)").FindStringSubmatch(v)
-	if twoParts == nil {
-		return &inference.IntRange{
+
+	matches = s.ExtractAllMatches(createPatterns(number))
+	for _, match := range matches {
+		v := match.Value
+		for e, a := range englishToArabicNumerals {
+			v = caseInsReplace(v, e, a)
+		}
+		result := &inference.IntRange{
 			Min:    atoiOrFail(v),
 			Max:    atoiOrFail(v),
 			Source: match.Source,
 		}
+		if result.Max > 33 {
+			continue
+		}
+		return result
 	}
-	return &inference.IntRange{
-		Min:    atoiOrFail(twoParts[1]),
-		Max:    atoiOrFail(twoParts[3]),
-		Source: match.Source,
-	}
+	return &inference.IntRange{}
 }
 
 var englishToArabicNumerals = map[string]string{

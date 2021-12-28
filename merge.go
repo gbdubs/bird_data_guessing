@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gbdubs/attributions"
 	"github.com/gbdubs/inference"
 )
 
 func mergeWingspan(inputs []*inference.Float64Range) (*inference.Float64Range, bool) {
+	if len(inputs) == 0 {
+		return &inference.Float64Range{}, false
+	}
 	minMin := 10000.0
 	maxMin := -1.0
 	minMax := 10000.0
@@ -33,10 +37,11 @@ func mergeWingspan(inputs []*inference.Float64Range) (*inference.Float64Range, b
 	}
 	highConfidence := true
 	if maxMin*.8 > minMax*1.2 || minMin < 0 || maxMax > 380 /* Wandering Albatros 375cm */ {
-		fmt.Printf("\n\nLOW CONFIDENCE WINGSPAN [%f, %f] to [%f, %f]\n", minMin, maxMin, minMax, maxMax)
+		fmt.Printf("\n\n\nLOW CONFIDENCE WINGSPAN [%f, %f] to [%f, %f]\n", minMin, maxMin, minMax, maxMax)
 		for _, input := range inputs {
 			fmt.Printf("%f to %f source %#v \n", input.Min, input.Max, input.Source.Origin.Attribution.OriginUrl)
 		}
+		fmt.Printf("\n\n")
 		highConfidence = false
 	}
 	min := minTotal / float64(len(inputs))
@@ -54,6 +59,9 @@ func mergeWingspan(inputs []*inference.Float64Range) (*inference.Float64Range, b
 }
 
 func mergeClutchSize(inputs []*inference.IntRange) (*inference.IntRange, bool) {
+	if len(inputs) == 0 {
+		return &inference.IntRange{}, false
+	}
 	minMin := math.MaxInt
 	maxMin := math.MinInt
 	minMax := math.MaxInt
@@ -83,7 +91,11 @@ func mergeClutchSize(inputs []*inference.IntRange) (*inference.IntRange, bool) {
 	}
 	highConfidence := true
 	if maxMin > minMax || minMin < 0 || maxMax > 33 /* Maximum avian clutch size is 33 */ {
-		fmt.Printf("LOW CONFIDENCE CLUTCH SIZE [%d, %d] to [%d, %d]\n", minMin, maxMin, minMax, maxMax)
+		fmt.Printf("\n\n\nLOW CONFIDENCE CLUTCH SIZE[%d, %d] to [%d, %d]\n", minMin, maxMin, minMax, maxMax)
+		for _, input := range inputs {
+			fmt.Printf("%d to %d source %s \n", input.Min, input.Max, spew.Sdump(input))
+		}
+		fmt.Printf("\n\n")
 		highConfidence = false
 	}
 	avgMin := int(math.Floor(float64(minTotal) / float64(count)))

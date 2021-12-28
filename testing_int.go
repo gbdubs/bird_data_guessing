@@ -26,7 +26,11 @@ func testRangeIntCases(t *testing.T, b testRangeIntBehavior, testCases ...rangeI
 	for _, c := range testCases {
 		r := b(c.name)
 		if c.expectedMin != r.Min || c.expectedMax != r.Max {
-			t.Errorf(`case %s assertion error - expected [%d, %d] - was [%d, %d] - debug: %+v %s`, c.name, c.expectedMin, c.expectedMax, r.Min, r.Max, r, r.Source.Dump())
+			sourceDump := ""
+			if *r != (inference.IntRange{}) {
+				sourceDump = r.Source.Dump()
+			}
+			t.Errorf(`case %s assertion error - expected [%d, %d] - was [%d, %d] - debug: %+v %s`, c.name, c.expectedMin, c.expectedMax, r.Min, r.Max, r, sourceDump)
 		}
 	}
 }

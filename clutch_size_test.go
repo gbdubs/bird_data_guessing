@@ -14,9 +14,19 @@ func TestClutchSize_Wikipedia(t *testing.T) {
 		rangeIntCase("Aythya valisineria", 5, 11),
 		rangeIntCase("Cardinalis sinuatus", 2, 4),
 		rangeIntCase("Cistothorus palustris", 4, 6),
-		rangeIntCase("Passer domesticus", 6, 6),
+		rangeIntCase("Passer domesticus", 4, 5),
 		rangeIntCase("Pooecetes gramineus", 3, 5),
 		rangeIntCase("Loxia leucoptera", 3, 5),
+		rangeIntCase("Buteo platypterus", 1, 4),
+		rangeIntCase("Troglodytes aedon", 2, 8),
+		rangeIntCase("Egretta thula", -1, 6),
+		rangeIntCase("Corthylio calendula", -1, 12),
+		rangeIntCase("Patagioenas fasciata", 1, 2),
+		rangeIntCase("Ardea alba", -1, 6),
+		rangeIntCase("Colinus virginianus", 8, 25),
+		rangeIntCase("Sialia mexicana", 4, 6),
+		rangeIntCase("Spizella pallida", 3, 5),
+		rangeIntCase("Charadrius melodus", 2, 3),
 		rangeIntCase("Spinus pinus", 0, 0))
 }
 
