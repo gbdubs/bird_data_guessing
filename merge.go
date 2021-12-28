@@ -67,17 +67,23 @@ func mergeClutchSize(inputs []*inference.IntRange) (*inference.IntRange, bool) {
 	minMax := math.MaxInt
 	maxMax := math.MinInt
 	minTotal := 0
+	minCount := 0
 	maxTotal := 0
-	count := 0
+	maxCount := 0
 	for _, input := range inputs {
 		if input.Min == 0 && input.Max == 0 {
 			continue
 		}
-		if minMin > input.Min {
-			minMin = input.Min
-		}
-		if maxMin < input.Min {
-			maxMin = input.Min
+		// Exclude open ranges + single points from minimum calculations.
+		if input.Min != -1 && input.Min != input.Max {
+			if minMin > input.Min {
+				minMin = input.Min
+			}
+			if maxMin < input.Min {
+				maxMin = input.Min
+			}
+			minTotal += input.Min
+			minCount++
 		}
 		if minMax > input.Max {
 			minMax = input.Max
@@ -85,12 +91,11 @@ func mergeClutchSize(inputs []*inference.IntRange) (*inference.IntRange, bool) {
 		if maxMax < input.Max {
 			maxMax = input.Max
 		}
-		minTotal += input.Min
 		maxTotal += input.Max
-		count++
+		maxCount++
 	}
 	highConfidence := true
-	if maxMin > minMax || minMin < 0 || maxMax > 33 /* Maximum avian clutch size is 33 */ {
+	if (minCount > 0 && (minMin < 0 || maxMin > minMax+1)) || minMin < 0 || maxMax > 33 /* Maximum avian clutch size is 33 */ {
 		fmt.Printf("\n\n\nLOW CONFIDENCE CLUTCH SIZE[%d, %d] to [%d, %d]\n", minMin, maxMin, minMax, maxMax)
 		for _, input := range inputs {
 			fmt.Printf("%d to %d source %s \n", input.Min, input.Max, spew.Sdump(input))
@@ -98,14 +103,17 @@ func mergeClutchSize(inputs []*inference.IntRange) (*inference.IntRange, bool) {
 		fmt.Printf("\n\n")
 		highConfidence = false
 	}
-	avgMin := int(math.Floor(float64(minTotal) / float64(count)))
-	avgMax := int(math.Ceil(float64(maxTotal) / float64(count)))
+	avgMin := 1
+	if minCount > 0 {
+		avgMin = int(math.Floor(float64(minTotal) / float64(minCount)))
+	}
+	avgMax := int(math.Ceil(float64(maxTotal) / float64(maxCount)))
 	result := &inference.IntRange{
 		Min: avgMin,
 		Max: avgMax,
 		Source: inference.CombineSources(
-			"took mean'ed min/max of input ranges",
-			fmt.Sprintf("%d - %d", minMin, maxMax),
+			"took mean'ed min/max of input ranges, with tollerance for open ranges + point estimates",
+			fmt.Sprintf("%d to %d", minMin, maxMax),
 			inference.AsSourceables(inputs)...,
 		),
 	}

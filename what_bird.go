@@ -60,12 +60,12 @@ func createWhatBirdRequests(birdName bird.BirdName) []*amass.GetRequest {
 	}
 }
 
-func reconstructWhatBirdsResponsesKeyedByLatinName(responses []*amass.GetResponse) map[string]*whatBirdResponse {
+func reconstructWhatBirdsResponsesKeyedByEnglishName(responses []*amass.GetResponse) map[string]*whatBirdResponse {
 	m := make(map[string]map[string]*amass.GetResponse)
 	m[whatBirdOverviewPage] = make(map[string]*amass.GetResponse)
 	m[whatBirdIdentificationPage] = make(map[string]*amass.GetResponse)
 	m[whatBirdBehaviorPage] = make(map[string]*amass.GetResponse)
-	latinNames := make(map[string]bool)
+	englishNames := make(map[string]bool)
 	for _, response := range responses {
 		if response.Site != whatBirdSite {
 			continue
@@ -82,24 +82,23 @@ func reconstructWhatBirdsResponsesKeyedByLatinName(responses []*amass.GetRespons
 		}
 		birdName := &bird.BirdName{}
 		response.GetRoundTripData(birdName)
-		latinName := birdName.Latin
-		latinNames[latinName] = true
-		m[page][latinName] = response
+		englishName := birdName.English
+		englishNames[englishName] = true
+		m[page][englishName] = response
 	}
 	result := make(map[string]*whatBirdResponse)
-	for latinName, _ := range latinNames {
-		result[latinName] = &whatBirdResponse{
-			Identification: *m[whatBirdIdentificationPage][latinName],
-			Behavior:       *m[whatBirdBehaviorPage][latinName],
-			Overview:       *m[whatBirdOverviewPage][latinName],
+	for englishName, _ := range englishNames {
+		result[englishName] = &whatBirdResponse{
+			Identification: *m[whatBirdIdentificationPage][englishName],
+			Behavior:       *m[whatBirdBehaviorPage][englishName],
+			Overview:       *m[whatBirdOverviewPage][englishName],
 		}
 	}
 	return result
 }
 
 func whatBirdRequestForTesting(englishName string) *whatBirdResponse {
-	latin := "not really a latin name"
-	bn := bird.BirdName{English: englishName, Latin: latin}
+	bn := bird.BirdName{English: englishName}
 	rs := createWhatBirdRequests(bn)
 	if len(rs) != 3 {
 		panic(fmt.Errorf("Expected 3 what bird request, was %d, for key %s.", len(rs), englishName))
@@ -108,8 +107,12 @@ func whatBirdRequestForTesting(englishName string) *whatBirdResponse {
 	if err != nil {
 		panic(fmt.Errorf("GetAll request failed for %s: %v", englishName, err))
 	}
-	m := reconstructWhatBirdsResponsesKeyedByLatinName(resps)
-	return m[latin]
+	m := reconstructWhatBirdsResponsesKeyedByEnglishName(resps)
+	result, ok := m[englishName]
+	if !ok {
+		panic(fmt.Errorf("Expected key %s in map, but map was %+v.", englishName, m))
+	}
+	return result
 }
 
 func (r *whatBirdResponse) propertySearchers() *propertySearchers {

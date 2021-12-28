@@ -69,7 +69,7 @@ func createRSPBRequests(birdName bird.BirdName) []*amass.GetRequest {
 	return []*amass.GetRequest{req}
 }
 
-func reconstructRSPBResponsesKeyedByLatinName(responses []*amass.GetResponse) map[string]*rspbResponse {
+func reconstructRSPBResponsesKeyedByEnglishName(responses []*amass.GetResponse) map[string]*rspbResponse {
 	result := make(map[string]*rspbResponse)
 	for _, response := range responses {
 		if response.Site != rspbSite {
@@ -81,7 +81,7 @@ func reconstructRSPBResponsesKeyedByLatinName(responses []*amass.GetResponse) ma
 			recordMissing(rspbSite, *birdName)
 			continue
 		}
-		result[birdName.Latin] = &rspbResponse{
+		result[birdName.English] = &rspbResponse{
 			Response: *response,
 		}
 	}
@@ -89,8 +89,7 @@ func reconstructRSPBResponsesKeyedByLatinName(responses []*amass.GetResponse) ma
 }
 
 func rspbRequestForTesting(englishName string) *rspbResponse {
-	latin := "any old string"
-	bn := bird.BirdName{Latin: latin, English: englishName}
+	bn := bird.BirdName{English: englishName}
 	rs := createRSPBRequests(bn)
 	if len(rs) != 1 {
 		panic(fmt.Errorf("Expected 1 rspb request, was %d, for key %s.", len(rs), englishName))
@@ -99,8 +98,8 @@ func rspbRequestForTesting(englishName string) *rspbResponse {
 	if err != nil {
 		panic(fmt.Errorf("Get request failed for %s: %v", englishName, err))
 	}
-	m := reconstructRSPBResponsesKeyedByLatinName([]*amass.GetResponse{resp})
-	result, ok := m[latin]
+	m := reconstructRSPBResponsesKeyedByEnglishName([]*amass.GetResponse{resp})
+	result, ok := m[englishName]
 	if !ok {
 		result = &rspbResponse{}
 	}

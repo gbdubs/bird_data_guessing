@@ -72,7 +72,7 @@ func createAudubonRequests(birdName bird.BirdName) []*amass.GetRequest {
 	return []*amass.GetRequest{req}
 }
 
-func reconstructAudubonResponsesKeyedByLatinName(responses []*amass.GetResponse) map[string]*audubonResponse {
+func reconstructAudubonResponsesKeyedByEnglishName(responses []*amass.GetResponse) map[string]*audubonResponse {
 	result := make(map[string]*audubonResponse)
 	for _, response := range responses {
 		if response.Site != audubonSite {
@@ -84,7 +84,7 @@ func reconstructAudubonResponsesKeyedByLatinName(responses []*amass.GetResponse)
 			recordMissing(audubonSite, *birdName)
 			continue
 		}
-		result[birdName.Latin] = &audubonResponse{
+		result[birdName.English] = &audubonResponse{
 			Response: *response,
 		}
 	}
@@ -92,8 +92,7 @@ func reconstructAudubonResponsesKeyedByLatinName(responses []*amass.GetResponse)
 }
 
 func audubonRequestForTesting(englishName string) *audubonResponse {
-	latin := "any old string"
-	bn := bird.BirdName{Latin: latin, English: englishName}
+	bn := bird.BirdName{English: englishName}
 	rs := createAudubonRequests(bn)
 	if len(rs) != 1 {
 		panic(fmt.Errorf("Expected 1 audubon request, was %d, for key %s.", len(rs), englishName))
@@ -102,8 +101,8 @@ func audubonRequestForTesting(englishName string) *audubonResponse {
 	if err != nil {
 		panic(fmt.Errorf("Get request failed for %s: %v", englishName, err))
 	}
-	m := reconstructAudubonResponsesKeyedByLatinName([]*amass.GetResponse{resp})
-	return m[latin]
+	m := reconstructAudubonResponsesKeyedByEnglishName([]*amass.GetResponse{resp})
+	return m[englishName]
 }
 
 func isAudubonResponseMissing(r *amass.GetResponse) bool {

@@ -26,6 +26,8 @@ func TestClutchSize_Wikipedia(t *testing.T) {
 		rangeIntCase("Colinus virginianus", 8, 25),
 		rangeIntCase("Sialia mexicana", 4, 6),
 		rangeIntCase("Spizella pallida", 3, 5),
+		rangeIntCase("Athene cunicularia", 4, 12),
+		rangeIntCase("Botaurus lentiginosus", -1, 6),
 		rangeIntCase("Charadrius melodus", 2, 3),
 		rangeIntCase("Spinus pinus", 0, 0))
 }
@@ -35,6 +37,7 @@ func TestClutchSize_WhatBird(t *testing.T) {
 		return whatBirdRequestForTesting(englishName).propertySearchers().clutchSize.ClutchSize()
 	}
 	testRangeIntCases(t, whatBirdClutchSize,
+		rangeIntCase("American Bittern", 2, 7),
 		rangeIntCase("Striped Owl", 2, 4),
 		rangeIntCase("Reed Bunting", 4, 6),
 		rangeIntCase("Red-breasted Sapsucker", 4, 5),
@@ -63,5 +66,7 @@ func TestClutchSize_AllAboutBirds(t *testing.T) {
 		rangeIntCase("Black-and-white warbler", 4, 6),
 		rangeIntCase("Clay-colored sparrow", 0, 0),
 		rangeIntCase("Downy woodpecker", 3, 8),
-		rangeIntCase("Hermit thrush", 3, 6))
+		rangeIntCase("Hermit thrush", 3, 6),
+		rangeIntCase("Black-billed Magpie", 1, 9),
+	)
 }

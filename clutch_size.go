@@ -8,25 +8,26 @@ import (
 )
 
 func (s *searcher) ClutchSize() *inference.IntRange {
-	number := `(one|two|three|four|five|six|seven|eight|nine|\d+)(\.\d+)?`
+	number := `(one|two|three|four|five|six|seven|eight|nine|\d+)`
 	other := `[^.\d]{0,30}`
-	space := `\s*`
+	spaceOrSep := `[\s:,\)-]*`
 
 	createPatterns := func(pattern string) map[string]int {
 		return map[string]int{
-			fmt.Sprintf(`(clutch|brood|nest|lay|laid)%s%s%segg`, other, pattern, space): 2,
-			fmt.Sprintf(`clutch%s%s%segg`, other, pattern, other):                       1,
-			fmt.Sprintf(`egg%sla(id|y)%s%s`, other, other, pattern):                     2,
-			fmt.Sprintf(`clutch size%s%s`, other, pattern):                              1,
-			fmt.Sprintf(`%s%seggs per year`, pattern, other):                            1,
-			fmt.Sprintf(`%s%segg%sla(y|id)`, pattern, other, other):                     1,
-			fmt.Sprintf(`la(id|y)%segg%s%s`, other, other, pattern):                     2,
-			fmt.Sprintf(`number of eggs%s%s`, other, pattern):                           1,
-			fmt.Sprintf(`eggs\s*(usually|from)?%s%s`, space, pattern):                   2,
+			fmt.Sprintf(`clutch%s%s%segg`, other, pattern, other):                            1,
+			fmt.Sprintf(`%s%seggs?%slaid`, pattern, other, other):                            1,
+			fmt.Sprintf(`clutch size%s%s`, other, pattern):                                   1,
+			fmt.Sprintf(`%s%seggs? per year`, pattern, other):                                1,
+			fmt.Sprintf(`%s%segg%sla(y|id)`, pattern, other, other):                          1,
+			fmt.Sprintf(`number of eggs%s%s`, other, pattern):                                1,
+			fmt.Sprintf(`(clutch|brood|nest|lay|laid)%s%s%segg`, other, pattern, spaceOrSep): 2,
+			fmt.Sprintf(`la(id|y)%s%s%segg`, other, pattern, other):                          2,
+			fmt.Sprintf(`eggs%s(usually|from)?%s%s`, spaceOrSep, spaceOrSep, pattern):        2,
+			//fmt.Sprintf(`egg%sla(id|y)%s%s`, other, other, pattern):                     2,
 		}
 	}
 
-	numberRange := fmt.Sprintf("((%s) ?(or|to|and|-|–) ?(%s))", number, number)
+	numberRange := fmt.Sprintf("(%s ?(or|to|and|-|-|–) ?%s)", number, number)
 	matches := s.ExtractAllMatches(createPatterns(numberRange))
 	for _, match := range matches {
 		if *match != (inference.String{}) {
@@ -39,7 +40,7 @@ func (s *searcher) ClutchSize() *inference.IntRange {
 				panic(fmt.Errorf("Error in regex format %s - didn't match submatches in %s.", numberRange, v))
 			}
 			min := atoiOrFail(twoParts[2])
-			max := atoiOrFail(twoParts[6])
+			max := atoiOrFail(twoParts[4])
 			if min > max {
 				min, max = max, min
 			}
@@ -48,14 +49,14 @@ func (s *searcher) ClutchSize() *inference.IntRange {
 				Max:    max,
 				Source: match.Source,
 			}
-			if result.Max > 33 || result.Min <= 0 || (result.Min+1)*3+1 < result.Max {
+			if result.Max > 33 || result.Min <= 0 {
 				continue
 			}
 			return result
 		}
 	}
 
-	upToRange := fmt.Sprintf("((as many as|up to|as large as|as much as) ?(%s))", number)
+	upToRange := fmt.Sprintf(`((as many as|up to|as large as|as much as)[^\d]{0,10}(%s))`, number)
 	matches = s.ExtractAllMatches(createPatterns(upToRange))
 	for _, match := range matches {
 		v := match.Value

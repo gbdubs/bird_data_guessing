@@ -76,14 +76,15 @@ func (input *Input) Execute() (*Output, error) {
 	}
 
 	latinToWikipedia := reconstructWikipediaResponsesKeyedByLatinName(responses)
-	latinToAllAboutBirds := reconstructAllAboutBirdsResponsesKeyedByLatinName(responses)
-	latinToAudubon := reconstructAudubonResponsesKeyedByLatinName(responses)
-	latinToWhatBird := reconstructWhatBirdsResponsesKeyedByLatinName(responses)
-	latinToRspb := reconstructRSPBResponsesKeyedByLatinName(responses)
+	englishToAllAboutBirds := reconstructAllAboutBirdsResponsesKeyedByEnglishName(responses)
+	englishToAudubon := reconstructAudubonResponsesKeyedByEnglishName(responses)
+	englishToWhatBird := reconstructWhatBirdsResponsesKeyedByEnglishName(responses)
+	englishToRspb := reconstructRSPBResponsesKeyedByEnglishName(responses)
 
 	for i, bird := range input.Names {
 		input.VLog("[%d/%d] Collecting + Merging %s", i, len(input.Names), bird.English)
 		latin := bird.Latin
+		english := bird.English
 		if wasMemoizedLatins[latin] {
 			input.VLog(" - came from memoized.\n")
 			continue
@@ -92,16 +93,16 @@ func (input *Input) Execute() (*Output, error) {
 		if w, ok := latinToWikipedia[latin]; ok {
 			allSources = append(allSources, w.propertySearchers().getData(bird))
 		}
-		if a, ok := latinToAllAboutBirds[latin]; ok {
+		if a, ok := englishToAllAboutBirds[english]; ok {
 			allSources = append(allSources, a.propertySearchers().getData(bird))
 		}
-		if a, ok := latinToAudubon[latin]; ok {
+		if a, ok := englishToAudubon[english]; ok {
 			allSources = append(allSources, a.propertySearchers().getData(bird))
 		}
-		if w, ok := latinToWhatBird[latin]; ok {
+		if w, ok := englishToWhatBird[english]; ok {
 			allSources = append(allSources, w.propertySearchers().getData(bird))
 		}
-		if w, ok := latinToRspb[latin]; ok {
+		if w, ok := englishToRspb[english]; ok {
 			allSources = append(allSources, w.propertySearchers().getData(bird))
 		}
 		if len(allSources) == 0 {

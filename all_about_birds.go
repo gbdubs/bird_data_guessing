@@ -77,12 +77,12 @@ func createAllAboutBirdsRequests(name bird.BirdName) []*amass.GetRequest {
 	return requests
 }
 
-func reconstructAllAboutBirdsResponsesKeyedByLatinName(responses []*amass.GetResponse) map[string]*allAboutBirdsResponse {
+func reconstructAllAboutBirdsResponsesKeyedByEnglishName(responses []*amass.GetResponse) map[string]*allAboutBirdsResponse {
 	m := make(map[string]map[string]*amass.GetResponse)
 	m[allAboutBirdsOverviewSuffix] = make(map[string]*amass.GetResponse)
 	m[allAboutBirdsIdSuffix] = make(map[string]*amass.GetResponse)
 	m[allAboutBirdsLifeHistorySuffix] = make(map[string]*amass.GetResponse)
-	latinNames := make(map[string]bool)
+	englishNames := make(map[string]bool)
 	for _, response := range responses {
 		if response.Site != allAboutBirdsSite {
 			continue
@@ -99,24 +99,23 @@ func reconstructAllAboutBirdsResponsesKeyedByLatinName(responses []*amass.GetRes
 		}
 		birdName := &bird.BirdName{}
 		response.GetRoundTripData(birdName)
-		latinName := birdName.Latin
-		latinNames[latinName] = true
-		m[page][latinName] = response
+		englishName := birdName.English
+		englishNames[englishName] = true
+		m[page][englishName] = response
 	}
 	result := make(map[string]*allAboutBirdsResponse)
-	for latinName, _ := range latinNames {
-		result[latinName] = &allAboutBirdsResponse{
-			Identification: *m[allAboutBirdsIdSuffix][latinName],
-			LifeHistory:    *m[allAboutBirdsLifeHistorySuffix][latinName],
-			Overview:       *m[allAboutBirdsOverviewSuffix][latinName],
+	for englishName, _ := range englishNames {
+		result[englishName] = &allAboutBirdsResponse{
+			Identification: *m[allAboutBirdsIdSuffix][englishName],
+			LifeHistory:    *m[allAboutBirdsLifeHistorySuffix][englishName],
+			Overview:       *m[allAboutBirdsOverviewSuffix][englishName],
 		}
 	}
 	return result
 }
 
 func allAboutBirdsRequestForTesting(englishName string) *allAboutBirdsResponse {
-	latin := "not really a latin name"
-	bn := bird.BirdName{English: englishName, Latin: latin}
+	bn := bird.BirdName{English: englishName}
 	rs := createAllAboutBirdsRequests(bn)
 	if len(rs) != 3 {
 		panic(fmt.Errorf("Expected 3 all about birds requests, was %d, for key %s.", len(rs), englishName))
@@ -125,8 +124,12 @@ func allAboutBirdsRequestForTesting(englishName string) *allAboutBirdsResponse {
 	if err != nil {
 		panic(fmt.Errorf("GetAll request failed for %s: %v", englishName, err))
 	}
-	m := reconstructAllAboutBirdsResponsesKeyedByLatinName(resps)
-	return m[latin]
+	m := reconstructAllAboutBirdsResponsesKeyedByEnglishName(resps)
+	result, ok := m[englishName]
+	if !ok {
+		panic(fmt.Errorf("Expected key %s in map, but map was %#v.", englishName, m))
+	}
+	return result
 }
 
 func (r *allAboutBirdsResponse) propertySearchers() *propertySearchers {
