@@ -77,6 +77,8 @@ func createAllAboutBirdsRequests(name bird.BirdName) []*amass.GetRequest {
 	return requests
 }
 
+// TODO Consider how missing works here with search result pages!!!
+
 func reconstructAllAboutBirdsResponsesKeyedByEnglishName(responses []*amass.GetResponse) map[string]*allAboutBirdsResponse {
 	m := make(map[string]map[string]*amass.GetResponse)
 	m[allAboutBirdsOverviewSuffix] = make(map[string]*amass.GetResponse)
@@ -151,13 +153,13 @@ func (r *allAboutBirdsResponse) propertySearchers() *propertySearchers {
 		wingspan:   attributedSearch(&r.Identification.Attribution, wingspanText),
 		clutchSize: attributedSearch(&r.LifeHistory.Attribution, nestingText),
 		eggColor:   attributedSearch(&r.LifeHistory.Attribution, nestingText),
-		funFact:    attributedSearch(&r.Overview.Attribution, coolFactsText+behaviorText),
+		funFact:    attributedSearch(&r.Overview.Attribution, coolFactsText, behaviorText),
 
 		food:     attributedSearch(&r.LifeHistory.Attribution, foodText),
 		nestType: attributedSearch(&r.LifeHistory.Attribution, nestingText),
 		habitat:  attributedSearch(&r.LifeHistory.Attribution, habitatText),
 
-		predator: attributedSearch(&r.Overview.Attribution, foodText+behaviorText+coolFactsText+idText),
-		flocking: attributedSearch(&r.Overview.Attribution, behaviorText+coolFactsText+idText+nestingText),
+		predator: attributedSearch(&r.Overview.Attribution, foodText, behaviorText, coolFactsText, idText),
+		flocking: attributedSearch(&r.Overview.Attribution, behaviorText, coolFactsText, idText, nestingText),
 	}
 }

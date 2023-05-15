@@ -16,8 +16,9 @@ type searcher struct {
 	attribution *attributions.Attribution
 }
 
-func attributedSearch(a *attributions.Attribution, s string) searcher {
+func attributedSearch(a *attributions.Attribution, ss ...string) searcher {
 	// Strips out Unicode Spaces
+	s := strings.Join(ss, " . ")
 	s = strings.Join(strings.Fields(s), " ")
 	s = strings.ReplaceAll(s, "\n", " ")
 	s = strings.ReplaceAll(s, "\t", " ")

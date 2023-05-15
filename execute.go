@@ -41,7 +41,8 @@ func (input *Input) Execute() (*Output, error) {
 				audubon := createAudubonRequests(bird)
 				allAboutBirds := createAllAboutBirdsRequests(bird)
 				rspb := createRSPBRequests(bird)
-				whatBird := createWhatBirdRequests(bird)
+				// Whatbird is currently down
+				// whatBird := createWhatBirdRequests(bird)
 
 				requestsLock.Lock()
 				input.VLog("[%d/%d] Created Requests for %s\n", i, len(input.Names), bird.English)
@@ -50,7 +51,7 @@ func (input *Input) Execute() (*Output, error) {
 				requests = append(requests, audubon...)
 				requests = append(requests, allAboutBirds...)
 				requests = append(requests, rspb...)
-				requests = append(requests, whatBird...)
+				// requests = append(requests, whatBird...)
 				requestsDone++
 				requestsLock.Unlock()
 			}
@@ -82,11 +83,11 @@ func (input *Input) Execute() (*Output, error) {
 	englishToRspb := reconstructRSPBResponsesKeyedByEnglishName(responses)
 
 	for i, bird := range input.Names {
-		input.VLog("[%d/%d] Collecting + Merging %s", i, len(input.Names), bird.English)
+		input.VLog("[%d/%d] Collecting + merging ", i, len(input.Names))
 		latin := bird.Latin
 		english := bird.English
 		if wasMemoizedLatins[latin] {
-			input.VLog(" - came from memoized.\n")
+			input.VLog(" %s - came from memoized.\n", bird.English)
 			continue
 		}
 		allSources := make([]*singleSourceData, 0)
@@ -117,9 +118,9 @@ func (input *Input) Execute() (*Output, error) {
 			if err != nil {
 				return oo, fmt.Errorf("While merging bird %s: %v", bird.English, err)
 			}
-			input.VLog(" - merged + memoized.\n")
+			input.VLog(" = merged + memoized %s.\n", bird.English)
 		} else {
-			input.VLog(" - low confidence, not merged or memoized\n")
+			input.VLog(" = LC!, not merged or memoized: %s.\n", bird.English)
 		}
 	}
 	return oo, nil

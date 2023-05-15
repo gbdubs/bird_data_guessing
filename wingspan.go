@@ -22,16 +22,20 @@ func (s *searcher) Wingspan() []*inference.Float64Range {
 	wingspan := "(wing.?span)"
 	wingspanPhrases := []string{femaleWingspan, maleWingspan, wingspan}
 
+	avgWingChord := fmt.Sprintf("(average%swing.?chord|wing.?chord%saverag)", e, e)
+	wingChord := "(wing.?chord)"
+	wingChordPhrases := []string{avgWingChord, wingChord}
+
 	units := []string{"(cm|centimeter|centimetre)", "(millimeter|millimetre|mm)", "(meter|m)", "(inches|in)", "(feet|ft)"}
 
-	findAllMatches := func(keywords []string) []*inference.Float64Range {
+	findAllMatches := func(keywords []string, multipler float64) []*inference.Float64Range {
 		results := make([]*inference.Float64Range, 0)
 		for _, keyword := range keywords {
 		nextKeyword:
 			for _, keywordFirst := range []bool{true, false} {
 				for unitIndex, unit := range units {
 					for _, useRange := range []bool{true, false} {
-						scalingFactor := 1.0
+						scalingFactor := multipler
 						if unitIndex == 1 {
 							scalingFactor = 0.1
 						} else if unitIndex == 2 {
@@ -84,5 +88,10 @@ func (s *searcher) Wingspan() []*inference.Float64Range {
 		}
 		return results
 	}
-	return append(findAllMatches(avgPhrases), findAllMatches(wingspanPhrases)...)
+
+	result := append(findAllMatches(avgPhrases, 1.0), findAllMatches(wingspanPhrases, 1.0)...)
+	if len(result) > 0 {
+		return result
+	}
+	return findAllMatches(wingChordPhrases, 2.25)
 }

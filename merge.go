@@ -131,7 +131,9 @@ func mergeFunFact(inputs []*inference.String) (*inference.String, bool) {
 	if len(inputs) == 0 {
 		return inference.NewString("", "No fun fact found", &attributions.Attribution{}), false
 	}
-	return inference.RandomChoiceString(inputs), true
+
+	result := inference.RandomChoiceString(inputs)
+	return result, true
 }
 
 func mergeScores(inputs []*inference.Int) *inference.Float64 {
@@ -197,46 +199,49 @@ func (input *Input) mergeSources(inputs []*singleSourceData) (data *BirdData, hi
 
 	if ws, hc := mergeWingspan(wingspans); hc {
 		data.Wingspan = ws
+		input.VLog(" wingspan=ok   ")
 	} else {
-		input.VLog(" - LC - Wingspan - ")
+		input.VLog(" wingspan=LC:%d ", len(wingspans))
 		highConfidence = false
 	}
 	if cs, hc := mergeClutchSize(clutchSizes); hc {
 		data.ClutchSize = cs
+		input.VLog(" clutchsize=ok  ")
 	} else {
-		input.VLog(" - LC - ClutchSize -")
 		highConfidence = false
+		input.VLog(" clutchsize=LC! ")
 	}
 	if ec, hc := mergeEggColor(eggColors); hc {
 		data.EggColor = ec
+		input.VLog(" eggcolor=ok  ")
 	} else {
+		input.VLog(" eggcolor=lc  ")
 		// Note: we're OK with egg color being missing, unlike the other 3 high-specificity properties, because we have a reasonable fallback.
 	}
 	if ff, hc := mergeFunFact(funFacts); hc {
 		data.FunFact = ff
+		input.VLog(" funfact=ok  ")
 	} else {
-		input.VLog(" - LC - Fun Fact -")
 		highConfidence = false
+		input.VLog(" funfact=LC! ")
 	}
-	/*
-		data.WheatScore = mergeScores(wheatScores)
-		data.WormScore = mergeScores(wormScores)
-		data.BerryScore = mergeScores(berryScores)
-		data.MouseScore = mergeScores(mouseScores)
-		data.FishScore = mergeScores(fishScores)
-		data.NectarScore = mergeScores(nectarScores)
+	data.WheatScore = mergeScores(wheatScores)
+	data.WormScore = mergeScores(wormScores)
+	data.BerryScore = mergeScores(berryScores)
+	data.MouseScore = mergeScores(mouseScores)
+	data.FishScore = mergeScores(fishScores)
+	data.NectarScore = mergeScores(nectarScores)
 
-		data.CavityScore = mergeScores(cavityScores)
-		data.CupScore = mergeScores(cupScores)
-		data.GroundScore = mergeScores(groundScores)
-		data.PlatformScore = mergeScores(platformScores)
+	data.CavityScore = mergeScores(cavityScores)
+	data.CupScore = mergeScores(cupScores)
+	data.GroundScore = mergeScores(groundScores)
+	data.PlatformScore = mergeScores(platformScores)
 
-		data.ForestScore = mergeScores(forestScores)
-		data.GrassScore = mergeScores(grassScores)
-		data.WaterScore = mergeScores(waterScores)
+	data.ForestScore = mergeScores(forestScores)
+	data.GrassScore = mergeScores(grassScores)
+	data.WaterScore = mergeScores(waterScores)
 
-		data.PredatorScore = mergeScores(predatorScores)
-		data.FlockingScore = mergeScores(flockingScores)
-	*/
+	data.PredatorScore = mergeScores(predatorScores)
+	data.FlockingScore = mergeScores(flockingScores)
 	return
 }

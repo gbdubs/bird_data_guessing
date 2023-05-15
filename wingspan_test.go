@@ -25,7 +25,8 @@ func TestWingspan_Wikipedia(t *testing.T) {
 		unorderedSliceRangeFloat64Case("Spizella pallida", 19, 19),
 		unorderedSliceRangeFloat64Case("Euphagus cyanocephalus", 39, 39),
 		unorderedSliceRangeFloat64Case("Melanitta americana", 71, 71),
-		unorderedSliceRangeFloat64Case("Accipiter striatus", 58, 68, 42, 58))
+		unorderedSliceRangeFloat64Case("Accipiter striatus", 58, 68, 42, 58),
+	)
 }
 
 func TestWingspan_WhatBird(t *testing.T) {
